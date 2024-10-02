@@ -1,0 +1,9 @@
+*.pyc
+.gitignore
+.tox
+.ruff_cache
+
+__pycache__
+build
+dist
+scrapy_webarchive.egg-info

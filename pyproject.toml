@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrapy-webarchive"
+version = "0.0.1"
+dependencies = [
+    "scrapy",
+    "warcio",
+    "smart-open",
+    "warc-knot",
+    "wacz",
+    "cdxj-indexer",
+]
+requires-python = ">=3.7"
+authors = []
+maintainers = []
+description = "A webarchive extension for Scrapy"
+readme = "README.md"
+keywords = ["Scrapy", "Webarchive", "WARC", "WACZ"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python",
+]
+
+[project.urls]
+Repository = "https://github.com/q-m/scrapy-webarchive"
