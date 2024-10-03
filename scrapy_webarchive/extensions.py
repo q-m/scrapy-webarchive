@@ -8,6 +8,7 @@ from scrapy.exceptions import NotConfigured
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.pipelines import files
+from scrapy.settings import Settings
 from typing_extensions import Self
 
 from scrapy_webarchive.utils import warc_date
@@ -26,9 +27,8 @@ class WaczExporter:
         "ftp": files.FTPFilesStore,
     }
 
-    def __init__(self, crawler: Crawler) -> None:
-        self.crawler = crawler
-        self.settings = crawler.settings
+    def __init__(self, settings: Settings, crawler: Crawler) -> None:
+        self.settings = settings
 
         if not self.settings["ARCHIVE"]:
             raise NotConfigured
@@ -39,10 +39,37 @@ class WaczExporter:
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
-        o = cls(crawler)
-        crawler.signals.connect(o.response_received, signal=signals.response_received)
-        crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
-        return o
+        try:
+            exporter = cls.from_settings(crawler.settings, crawler)
+        except AttributeError:
+            exporter = cls(crawler.settings, crawler)
+
+        crawler.signals.connect(exporter.response_received, signal=signals.response_received)
+        crawler.signals.connect(exporter.spider_closed, signal=signals.spider_closed)
+        return exporter
+    
+    @classmethod
+    def from_settings(cls, settings: Settings, crawler: Crawler):
+        s3store = cls.STORE_SCHEMES["s3"]
+        s3store.AWS_ACCESS_KEY_ID = settings["AWS_ACCESS_KEY_ID"]
+        s3store.AWS_SECRET_ACCESS_KEY = settings["AWS_SECRET_ACCESS_KEY"]
+        s3store.AWS_SESSION_TOKEN = settings["AWS_SESSION_TOKEN"]
+        s3store.AWS_ENDPOINT_URL = settings["AWS_ENDPOINT_URL"]
+        s3store.AWS_REGION_NAME = settings["AWS_REGION_NAME"]
+        s3store.AWS_USE_SSL = settings["AWS_USE_SSL"]
+        s3store.AWS_VERIFY = settings["AWS_VERIFY"]
+        s3store.POLICY = settings["FILES_STORE_S3_ACL"]
+
+        gcs_store = cls.STORE_SCHEMES["gs"]
+        gcs_store.GCS_PROJECT_ID = settings["GCS_PROJECT_ID"]
+        gcs_store.POLICY = settings["FILES_STORE_GCS_ACL"] or None
+
+        ftp_store = cls.STORE_SCHEMES["ftp"]
+        ftp_store.FTP_USERNAME = settings["FTP_USER"]
+        ftp_store.FTP_PASSWORD = settings["FTP_PASSWORD"]
+        ftp_store.USE_ACTIVE_MODE = settings.getbool("FEED_STORAGE_FTP_ACTIVE")
+
+        return cls(settings=settings, crawler=crawler)
 
     def response_received(self, response: Response, request: Request) -> None:
         # TODO: Move this
