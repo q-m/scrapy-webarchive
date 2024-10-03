@@ -1,4 +1,3 @@
-import os
 import socket
 import uuid
 from datetime import datetime, timezone
@@ -20,32 +19,20 @@ def create_warc_fname(tla):
     """
     Returns new WARC filename. WARC filename format compatible with internetarchive/draintasker warc naming #1:
     {TLA}-{timestamp}-{serial}-{fqdn}.warc.gz
-
-    Raises IOError if WARC file exists or destination is not found.
     """
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     fqdn = socket.gethostname().split(".")[0]
-    warc_name = "-".join([tla, timestamp, "00000", fqdn]) + ".warc.gz"
-    warc_dest = ""  # TODO
-
-    if warc_dest and not os.path.exists(warc_dest):
-        raise IOError(f"warc_dest not found: {warc_dest}")
-
-    fname = os.path.join(warc_dest, warc_name)
-
-    if os.path.exists(fname):
-        raise IOError(f"WARC file exists: {fname}")
-
-    return fname
+    return "-".join([tla, timestamp, "00000", fqdn]) + ".warc.gz"
 
 
 class WarcFileWriter:
     """Handles writing WARC files"""
 
-    def __init__(self, warc_fname: str, collection_name: str):
-        self.warc_fname = warc_fname
+    def __init__(self, collection_name: str):
         self.collection_name = collection_name
+        self.warc_fname = create_warc_fname(tla=collection_name)
+        # TODO: If warc_fname exists, raise
 
     def write_record(
         self, url, record_type, headers, warc_headers, content_type, content, http_line

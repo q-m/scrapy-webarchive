@@ -1,6 +1,6 @@
 import gzip
+import io
 import os
-import shutil
 import zipfile
 from collections import defaultdict
 
@@ -13,7 +13,14 @@ from scrapy_webarchive.cdxj import CdxjRecord
 class WaczFileCreator:
     """Handles creating WACZ archives"""
 
-    def __init__(self, warc_fname: str, cdxj_fname: str = "index.cdxj", wacz_fname: str = "archive.wacz"):
+    def __init__(
+            self,
+            store,
+            warc_fname: str, 
+            cdxj_fname: str = "index.cdxj", 
+            wacz_fname: str = "archive.wacz",
+        ):
+        self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
         self.wacz_fname = wacz_fname
@@ -21,7 +28,7 @@ class WaczFileCreator:
     def create_wacz(self) -> None:
         """Create the WACZ file from the WARC"""
 
-        wacz = zipfile.ZipFile(self.wacz_fname, "w")
+        zip_buffer = io.BytesIO()
 
         # Write index
         wacz_indexer = CDXJIndexer(
@@ -30,25 +37,23 @@ class WaczFileCreator:
         )
         wacz_indexer.process_all()
 
-        wacz_index_file = zipfile.ZipInfo.from_file(
-            self.cdxj_fname, "indexes/" + os.path.basename(self.cdxj_fname)
-        )
-
-        with wacz.open(wacz_index_file, "w") as out_fh:
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Add the cdxj file to the WACZ
             with open(self.cdxj_fname, "rb") as in_fh:
-                shutil.copyfileobj(in_fh, out_fh)
+                file_content = in_fh.read()  # Read file content
+                zip_file.writestr("indexes/" + os.path.basename(self.cdxj_fname), file_content)
 
-        # Write WARC files to WACZ
-        for _input in [self.warc_fname]:
-            archive_file = zipfile.ZipInfo.from_file(
-                _input, "archive/" + os.path.basename(_input)
-            )
+            os.remove(self.cdxj_fname)  # Remove original cdxj file
 
-            with wacz.open(archive_file, "w") as out_fh:
-                with open(_input, "rb") as in_fh:
-                    shutil.copyfileobj(in_fh, out_fh)
+            # Write WARC file to the WACZ
+            with open(self.warc_fname, "rb") as in_fh:
+                file_content = in_fh.read()  # Read file content
+                zip_file.writestr("archive/" + os.path.basename(self.warc_fname), file_content)
 
-        wacz.close()
+            os.remove(self.warc_fname)  # Remove original WARC file
+
+        zip_buffer.seek(0)
+        self.store.persist_file(self.wacz_fname, zip_buffer, info=None)
 
 
 class MultiWaczFile:
