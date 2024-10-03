@@ -30,7 +30,7 @@ class WaczExporter:
     def __init__(self, settings: Settings, crawler: Crawler) -> None:
         self.settings = settings
 
-        if not self.settings["ARCHIVE"]:
+        if not self.settings["ARCHIVE_EXPORT_URI"]:
             raise NotConfigured
 
         self.store = self._get_store()
@@ -96,12 +96,13 @@ class WaczExporter:
         }
 
     def _get_store(self):
-        archive_dir_template = self.settings["ARCHIVE"]["archive_dir"]
-        uri = archive_dir_template.format(**self._get_context_variables())
+        archive_uri_template = self.settings["ARCHIVE_EXPORT_URI"]
+        uri = archive_uri_template.format(**self._get_context_variables())
     
         if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
             scheme = "file"
         else:
             scheme = urlparse(uri).scheme
+
         store_cls = self.STORE_SCHEMES[scheme]
         return store_cls(uri)
