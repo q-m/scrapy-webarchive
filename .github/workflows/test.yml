@@ -17,8 +17,10 @@ jobs:
           python-version: "3.8"
       - name: Install Dependencies
         run: pip install -r requirements-tests.txt
-      - name: Lint
+      - name: Ruff
         run: ruff check scrapy_webarchive tests
+      - name: Mypy
+        run: mypy scrapy_webarchive
 
   test:
     runs-on: ubuntu-latest
