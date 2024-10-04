@@ -1,5 +1,5 @@
 import re
-from typing import Iterable
+from typing import Iterable, Union
 from urllib.parse import urlparse
 
 from scrapy import signals
@@ -45,6 +45,7 @@ class WaczMiddleware:
 
     def spider_opened(self, spider: Spider) -> None:
         tp = {"timeout": self.timeout}
+        self.wacz: Union[WaczFile, MultiWaczFile]
 
         if len(self.wacz_urls) == 1:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {self.wacz_urls[0]}")
