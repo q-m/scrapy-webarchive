@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
+from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord
@@ -16,28 +17,37 @@ from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.utils import header_lines_to_dict
 
 
-def create_warc_fname(tla):
+def generate_warc_fname(prefix: str) -> str:
     """
-    Returns new WARC filename. WARC filename format compatible with internetarchive/draintasker warc naming #1:
-    {TLA}-{timestamp}-{serial}-{fqdn}.warc.gz
+    Returns new WARC filename based on recommendation in the warc-specification:
+    https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#annex-c-informative-warc-file-size-and-name-recommendations
+    {prefix}-{timestamp}-{serial}-{crawlhost}.warc.gz
     """
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    fqdn = socket.gethostname().split(".")[0]
-    return "-".join([tla, timestamp, "00000", fqdn]) + ".warc.gz"
+    crawlhost = socket.gethostname().split(".")[0]
+    # As of now we only generate one WARC file. Add serial in here to adhere to the warc specification.
+    serial = '00000'
+    return "-".join([prefix, timestamp, serial, crawlhost]) + ".warc.gz"
 
 
 class WarcFileWriter:
     """Handles writing WARC files"""
 
-    def __init__(self, collection_name: str):
+    def __init__(self, collection_name: str) -> None:
         self.collection_name = collection_name
-        self.warc_fname = create_warc_fname(tla=collection_name)
-        # TODO: If warc_fname exists, raise
+        self.warc_fname = generate_warc_fname(prefix=collection_name)
 
     def write_record(
-        self, url, record_type, headers, warc_headers, content_type, content, http_line
-    ):
+        self, 
+        url: str, 
+        record_type: str, 
+        headers: list[tuple[str, str]], 
+        warc_headers: StatusAndHeaders, 
+        content_type: str, 
+        content: str, 
+        http_line: str,
+    ) -> ArcWarcRecord:
         """Write any WARC record (response or request) to a WARC file"""
 
         with open(self.warc_fname, "ab") as fh:
@@ -57,7 +67,7 @@ class WarcFileWriter:
         
         return record
 
-    def write_response(self, response, request):
+    def write_response(self, response: Response, request: Request) -> ArcWarcRecord:
         record_id = self.__record_id()
         warc_headers = StatusAndHeaders(
             "",
@@ -88,7 +98,7 @@ class WarcFileWriter:
         )
         return record
 
-    def write_request(self, request, concurrent_to: ArcWarcRecord):
+    def write_request(self, request: Request, concurrent_to: ArcWarcRecord):
         """Write a WARC-Type: request record"""
 
         record_id = self.__record_id()
@@ -122,7 +132,7 @@ class WarcFileWriter:
         )
         return record
 
-    def write_warcinfo(self):
+    def write_warcinfo(self) -> None:
         """Write WARC-Type: warcinfo record"""
 
         content = {
@@ -139,7 +149,7 @@ class WarcFileWriter:
             writer.write_record(record)
 
     @staticmethod
-    def __record_id():
+    def __record_id() -> str:
         """Returns WARC-Record-ID (globally unique UUID) as a string"""
         return f"<urn:uuid:{uuid.uuid1()}>"
 

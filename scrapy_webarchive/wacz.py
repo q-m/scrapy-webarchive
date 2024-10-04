@@ -18,7 +18,7 @@ class WaczFileCreator:
             store,
             warc_fname: str, 
             cdxj_fname: str = "index.cdxj", 
-        ):
+        ) -> None:
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
