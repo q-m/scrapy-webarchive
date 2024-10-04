@@ -9,3 +9,4 @@ __pycache__
 build
 dist
 scrapy_webarchive.egg-info
+site
