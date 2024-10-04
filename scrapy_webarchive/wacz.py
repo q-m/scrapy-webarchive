@@ -18,12 +18,10 @@ class WaczFileCreator:
             store,
             warc_fname: str, 
             cdxj_fname: str = "index.cdxj", 
-            wacz_fname: str = "archive.wacz",
         ):
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
-        self.wacz_fname = wacz_fname
 
     def create_wacz(self) -> None:
         """Create the WACZ file from the WARC"""
@@ -53,7 +51,11 @@ class WaczFileCreator:
             os.remove(self.warc_fname)  # Remove original WARC file
 
         zip_buffer.seek(0)
-        self.store.persist_file(self.wacz_fname, zip_buffer, info=None)
+        self.store.persist_file(self.get_wacz_fname(), zip_buffer, info=None)
+
+    def get_wacz_fname(self) -> str:
+        wacz_fname = "-".join(self.warc_fname.split("-")[:2])
+        return wacz_fname + ".wacz"
 
 
 class MultiWaczFile:
