@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
-from scrapy import signals
+from scrapy import Spider, signals
 from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.http.request import Request
@@ -29,6 +29,7 @@ class WaczExporter:
 
     def __init__(self, settings: Settings, crawler: Crawler) -> None:
         self.settings = settings
+        self.stats = crawler.stats
 
         if not self.settings["ARCHIVE_EXPORT_URI"]:
             raise NotConfigured
@@ -39,6 +40,8 @@ class WaczExporter:
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
+        assert crawler.stats
+
         try:
             exporter = cls.from_settings(crawler.settings, crawler)
         except AttributeError:
@@ -71,15 +74,20 @@ class WaczExporter:
 
         return cls(settings=settings, crawler=crawler)
 
-    def response_received(self, response: Response, request: Request) -> None:
-        # TODO: Move this
+    def response_received(self, response: Response, request: Request, spider: Spider) -> None:
         request.meta["WARC-Date"] = warc_date()
 
         # Write response WARC record
-        response_record_id = self.writer.write_response(response, request)
+        record = self.writer.write_response(response, request)
+        self.stats.inc_value("wacz/exporter/response_written", spider=spider)
+        self.stats.inc_value(
+            f"wacz/exporter/writer_status_count/{record.http_headers.get_statuscode()}", 
+            spider=spider,
+        )
 
         # Write request WARC record
-        self.writer.write_request(request, concurrent_to=response_record_id)
+        self.writer.write_request(request, concurrent_to=record)
+        self.stats.inc_value("wacz/exporter/request_written", spider=spider)
 
     def spider_closed(self) -> None:
         wacz_creator = WaczFileCreator(warc_fname=self.writer.warc_fname, store=self.store)

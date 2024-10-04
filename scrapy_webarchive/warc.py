@@ -8,6 +8,7 @@ from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
 from scrapy.responsetypes import ResponseTypes
 from warc.warc import WARCRecord
+from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import WARCWriter
 
@@ -41,7 +42,7 @@ class WarcFileWriter:
 
         with open(self.warc_fname, "ab") as fh:
             writer = WARCWriter(fh, gzip=True)
-            http_headers = StatusAndHeaders(statusline=http_line, headers=headers)
+            http_headers = StatusAndHeaders(statusline=http_line, headers=headers, is_http_request=True)
             payload = BytesIO(bytes(content, "utf-8"))
 
             record = writer.create_warc_record(
@@ -53,6 +54,8 @@ class WarcFileWriter:
                 warc_content_type=content_type,
             )
             writer.write_record(record)
+        
+        return record
 
     def write_response(self, response, request):
         record_id = self.__record_id()
@@ -74,7 +77,7 @@ class WarcFileWriter:
             val = response.headers[key]
             headers.append((key.decode(), val.decode()))
 
-        self.write_record(
+        record = self.write_record(
             url=response.url,
             record_type="response",
             content=response.body.decode(),
@@ -83,9 +86,9 @@ class WarcFileWriter:
             warc_headers=warc_headers,
             http_line=http_line,
         )
-        return record_id
+        return record
 
-    def write_request(self, request, concurrent_to):
+    def write_request(self, request, concurrent_to: ArcWarcRecord):
         """Write a WARC-Type: request record"""
 
         record_id = self.__record_id()
@@ -96,7 +99,7 @@ class WarcFileWriter:
                 ("WARC-Target-URI", request.url),
                 ("WARC-Date", request.meta["WARC-Date"]),
                 ("WARC-Record-ID", record_id),
-                ("WARC-Concurrent-To", concurrent_to),
+                ("WARC-Concurrent-To", concurrent_to.rec_headers.get_header('WARC-Record-ID')),
             ],
             protocol="WARC/1.0",
         )
@@ -108,7 +111,7 @@ class WarcFileWriter:
             val = request.headers[key]
             headers.append((key.decode(), val.decode()))
 
-        self.write_record(
+        record = self.write_record(
             url=request.url,
             record_type="request",
             content_type="application/http; msgtype=request",
@@ -117,7 +120,7 @@ class WarcFileWriter:
             warc_headers=warc_headers,
             http_line=http_line,
         )
-        return record_id
+        return record
 
     def write_warcinfo(self):
         """Write WARC-Type: warcinfo record"""
