@@ -1,0 +1,5 @@
+site_name: scrapy-webarchive
+site_description: 
+site_url: https://github.com/q-m/scrapy-webarchive
+theme:
+  name: material

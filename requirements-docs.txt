@@ -1,0 +1,2 @@
+-e .
+mkdocs-material==9.5.18
