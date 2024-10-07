@@ -1,5 +1,4 @@
 import re
-from typing import Union
 
 from scrapy import signals
 from scrapy.crawler import Crawler
@@ -10,7 +9,7 @@ from scrapy.settings import Settings
 from scrapy.spiders import Spider
 from scrapy.statscollectors import StatsCollector
 from smart_open import open
-from typing_extensions import Self
+from typing_extensions import Self, Union
 
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
