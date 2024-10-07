@@ -169,16 +169,14 @@ class WarcRecordTransformer:
     def response_for_record(self, record: WARCRecord, **kwargs):
         # We expect a response.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-type-mandatory
-        if record["WARC-Type"] != "response":
-            raise WaczMiddlewareException(f"Unexpected record type: {record['type']}")
+        if record.type != "response":
+            raise WaczMiddlewareException(f"Unexpected record type: {record.type}")
 
         # We only know how to handle application/http.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#content-type
         record_content_type = (record["Content-Type"] or "").split(";", 1)[0]
         if record_content_type != "application/http":
-            raise WaczMiddlewareException(
-                f"Unexpected record content-type: {record_content_type}"
-            )
+            raise WaczMiddlewareException(f"Unexpected record content-type: {record_content_type}")
 
         # There is a date field in record['WARC-Date'], but don't have a use for it now.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-date-mandatory
@@ -200,7 +198,7 @@ class WarcRecordTransformer:
         response_cls = self.response_types.from_headers(headers)
 
         return response_cls(
-            url=record["WARC-Target-URI"],
+            url=record.url,
             status=int(status.decode()),
             protocol=protocol.decode(),
             headers=headers,
