@@ -1,6 +1,5 @@
 import re
-from typing import Iterable, Union
-from urllib.parse import urlparse
+from typing import Union
 
 from scrapy import signals
 from scrapy.crawler import Crawler
@@ -55,35 +54,6 @@ class WaczMiddleware:
             self.wacz = MultiWaczFile(
                 [open(u, "rb", transport_params=tp) for u in self.wacz_urls]
             )
-
-    def process_start_requests(self, start_requests: Iterable[Request], spider: Spider):
-        if not self.crawl:
-            for request in start_requests:
-                yield request
-
-        if self.crawl:
-            # ignore original start requests, just yield all responses found
-            for entry in self.wacz.iter_index():
-                url = entry["url"]
-
-                # filter out off-site responses
-                if urlparse(url).hostname not in spider.allowed_domains:
-                    continue
-
-                # only accept whitelisted responses if requested by spider
-                if hasattr(spider, "archive_regexp") and not re.search(spider.archive_regexp, url):
-                    continue
-
-                self.stats.inc_value("wacz/start_request_count", spider=spider)
-
-                # do not filter to allow all occurences to be handled
-                # since we don't yet get all information for the request, this can be necessary
-                yield record_transformer.request_for_record(
-                    entry,
-                    flags=["wacz_start_request"],
-                    meta={"wacz_index_entry": entry},
-                    dont_filter=True,
-                )
 
     def process_request(self, request: Request, spider: Spider):
         # ignore blacklisted pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
