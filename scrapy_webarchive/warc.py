@@ -2,13 +2,13 @@ import socket
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
-from typing import List, Tuple
 from urllib.parse import urlparse
 
 from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
+from typing_extensions import List, Tuple
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders

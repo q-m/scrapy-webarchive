@@ -1,5 +1,4 @@
 import re
-from typing import Iterable, Self, Union
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -8,6 +7,7 @@ from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
 from smart_open import open
+from typing_extensions import Iterable, Self, Union
 
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
