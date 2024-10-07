@@ -8,7 +8,7 @@ from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
-from typing_extensions import List, Tuple
+from typing_extensions import List, Optional, Tuple
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders
@@ -35,9 +35,9 @@ def generate_warc_fname(prefix: str) -> str:
 class WarcFileWriter:
     """Handles writing WARC files"""
 
-    def __init__(self, collection_name: str) -> None:
+    def __init__(self, collection_name: str, warc_fname: Optional[str] = None) -> None:
         self.collection_name = collection_name
-        self.warc_fname = generate_warc_fname(prefix=collection_name)
+        self.warc_fname = warc_fname or generate_warc_fname(prefix=collection_name)
 
     def write_record(
         self, 
