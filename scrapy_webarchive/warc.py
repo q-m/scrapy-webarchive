@@ -1,4 +1,5 @@
 import socket
+from typing import List, Tuple
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
@@ -42,7 +43,7 @@ class WarcFileWriter:
         self, 
         url: str, 
         record_type: str, 
-        headers: list[tuple[str, str]], 
+        headers: List[Tuple[str, str]], 
         warc_headers: StatusAndHeaders, 
         content_type: str, 
         content: str, 

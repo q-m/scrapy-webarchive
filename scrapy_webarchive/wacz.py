@@ -60,8 +60,6 @@ class WaczFileCreator:
 
 class MultiWaczFile:
     """
-    Multiple WACZ files
-
     The MultiWACZ file format is not yet finalized, hence instead of pointing to a
     MultiWACZ file, this just works with the multiple WACZ files.
 
@@ -96,8 +94,6 @@ class MultiWaczFile:
 
 class WaczFile:
     """
-    WACZ file.
-
     Handles looking up pages in the index, and iterating over all pages in the index.
     Can also iterate over all entries in each WARC embedded in the archive.
     """
