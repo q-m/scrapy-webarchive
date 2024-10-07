@@ -21,6 +21,9 @@ Supported variables: `year`, `month`, `day` and `timestamp`.
 
 ```python
 WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz"
+
+# Allows multiple sources, comma seperated.
+WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz,/path/to/archive.wacz"
 ```
 
 This setting defines the location of the WACZ file that should be used as a source for the crawl job.
