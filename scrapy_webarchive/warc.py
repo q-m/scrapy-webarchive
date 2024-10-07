@@ -1,8 +1,8 @@
 import socket
-from typing import List, Tuple
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
+from typing import List, Tuple
 from urllib.parse import urlparse
 
 from scrapy import __version__ as scrapy_version
@@ -162,7 +162,7 @@ class WarcRecordTransformer:
     
     response_types = ResponseTypes()
 
-    def request_for_record(self, record: WARCRecord, **kwargs):
+    def request_for_record(self, record: dict, **kwargs):
         # TODO: locate request in WACZ and include all relevant things (like headers)
         return Request(url=record["url"], method=record.get("method", "GET"), **kwargs)
 
