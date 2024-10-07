@@ -1,3 +1,4 @@
+import gzip
 import socket
 
 import pytest
@@ -7,7 +8,7 @@ from scrapy.http import HtmlResponse
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
-from scrapy_webarchive.warc import generate_warc_fname, record_transformer
+from scrapy_webarchive.warc import WarcFileWriter, generate_warc_fname, record_transformer
 
 
 @freeze_time("2024-10-04 08:27:11")
@@ -55,3 +56,27 @@ class TestWarcRecordTransformer:
         assert response.url == 'https://quotes.toscrape.com/'
         assert response.status == 200
         assert response.body == b'<!DOCTYPE html>\n<html lang="en">Welcome to scrapy-webarchive!</html>'
+
+
+class TestWarcFileWriter:
+    warc_fname = '/tmp/test.warc.gz'
+
+    def test_write_warcinfo_record(self, fs):
+        fs.create_file(self.warc_fname)
+        collection_name = 'example'
+        wfw = WarcFileWriter(collection_name=collection_name, warc_fname=self.warc_fname)
+
+        # Confidence test
+        warcinfo = gzip.open('/tmp/test.warc.gz', 'rb').read().decode()
+        assert warcinfo == ''
+
+        # Write warcinfo record and check output
+        wfw.write_warcinfo()
+        warcinfo = gzip.open('/tmp/test.warc.gz', 'rb').read().decode()
+        
+        assert 'WARC/1.0' in warcinfo
+        assert 'WARC-Type: warcinfo' in warcinfo
+        assert 'WARC-Record-ID:' in warcinfo
+        assert 'WARC-Filename: /tmp/test.warc.gz' in warcinfo
+        assert 'Content-Type: application/warc-fields' in warcinfo
+        assert f'isPartOf: {collection_name}' in warcinfo
