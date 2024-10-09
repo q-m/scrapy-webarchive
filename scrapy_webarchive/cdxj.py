@@ -10,9 +10,6 @@ CDXREC = re.compile(
 
 
 class CdxjRecord:
-    def _segment_length(self, seg, sep):
-        return seg.strip(sep).count(sep) + 1 if seg.strip(sep) else 0
-
     def _parse(self, line):
         return CDXREC.match(line)
 
