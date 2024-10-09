@@ -1,21 +1,17 @@
 # Scrapy Webarchive
 
-A Web Archive extension for Scrapy
+Scrapy Webarchive is a plugin for Scrapy that allows users to capture and export web archives in the WARC and WACZ formats during crawling.
 
+## Features
 
-# Installation
+* Save web crawls in WACZ format (multiple storages supported; local and cloud).
+* Crawl against WACZ format archives.
+* Integrate seamlessly with Scrapy’s spider request and response cycle.
 
-Add to your `settings.py` or your spider configuration.
+## Compatibility
 
-```python
-EXTENSIONS = {
-    'scrapy_webarchive.extensions.WaczExporter': 543,
-}
+* Python 3.8+
 
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy_webarchive.downloadermiddlewares.WaczMiddleware': 543,
-}
+## Documentation
 
-# year, month, day and timestamp are the supported template variables that you can use.
-ARCHIVE_EXPORT_URI = 's3://scrapy-webarchive/{year}/{month}/{day}/'
-```
+Documentation is available online at [developers.thequestionmark.org/scrapy-webarchive/](https://developers.thequestionmark.org/scrapy-webarchive/)

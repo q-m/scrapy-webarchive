@@ -58,7 +58,7 @@ class WaczCrawlMiddleware:
             url = entry["url"]
 
             # filter out off-site responses
-            if hasattr(spider, 'allowed_domains') and urlparse(url).hostname not in spider.allowed_domains:
+            if hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains:
                 continue
 
             # only accept whitelisted responses if requested by spider
