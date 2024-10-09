@@ -36,7 +36,7 @@ class WaczExporter:
 
         self.store = self._get_store()
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
-        self.writer.write_warcinfo()
+        self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:

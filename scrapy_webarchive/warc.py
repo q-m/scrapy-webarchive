@@ -133,7 +133,7 @@ class WarcFileWriter:
         )
         return record
 
-    def write_warcinfo(self) -> None:
+    def write_warcinfo(self, robotstxt_obey: bool) -> None:
         """Write WARC-Type: warcinfo record"""
 
         content = {
@@ -141,7 +141,7 @@ class WarcFileWriter:
             "format": "WARC file version 1.0",
             "conformsTo": "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.0/",
             "isPartOf": self.collection_name,
-            "robots": "obey" if True else "ignore",
+            "robots": "obey" if robotstxt_obey else "ignore",
         }
 
         with open(self.warc_fname, "ab") as fh:

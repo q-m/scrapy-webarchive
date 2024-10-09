@@ -71,7 +71,7 @@ class TestWarcFileWriter:
         assert warcinfo == ''
 
         # Write warcinfo record and check output
-        wfw.write_warcinfo()
+        wfw.write_warcinfo(robotstxt_obey=True)
         warcinfo = gzip.open('/tmp/test.warc.gz', 'rb').read().decode()
         
         assert 'WARC/1.0' in warcinfo
@@ -80,3 +80,4 @@ class TestWarcFileWriter:
         assert 'WARC-Filename: /tmp/test.warc.gz' in warcinfo
         assert 'Content-Type: application/warc-fields' in warcinfo
         assert f'isPartOf: {collection_name}' in warcinfo
+        assert 'robots: obey' in warcinfo
