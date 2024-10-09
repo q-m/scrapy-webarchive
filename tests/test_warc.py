@@ -1,11 +1,14 @@
 import gzip
 import socket
+from io import BytesIO
 
 import pytest
 from freezegun import freeze_time
-from scrapy import Request
 from scrapy.http import HtmlResponse
+from scrapy.http.request import Request
+from scrapy.http.response import Response
 from warc.warc import WARCRecord
+from warcio.recordloader import ArcWarcRecordLoader
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.warc import WarcFileWriter, generate_warc_fname, record_transformer
@@ -53,31 +56,98 @@ class TestWarcRecordTransformer:
     def test_response_for_record(self, warc_record_response):
         response = record_transformer.response_for_record(warc_record_response)
         assert isinstance(response, HtmlResponse)
-        assert response.url == 'https://quotes.toscrape.com/'
+        assert response.url == "https://quotes.toscrape.com/"
         assert response.status == 200
         assert response.body == b'<!DOCTYPE html>\n<html lang="en">Welcome to scrapy-webarchive!</html>'
 
 
+UTF8_PAYLOAD = u'\
+HTTP/1.0 200 OK\r\n\
+Content-Type: text/plain; charset="UTF-8"\r\n\
+Content-Disposition: attachment; filename="испытание.txt"\r\n\
+Custom-Header: somevalue\r\n\
+Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
+\r\n\
+some\n\
+text'
+
+content_length = len(UTF8_PAYLOAD.encode('utf-8'))
+
+UTF8_RECORD = u'\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:KMUABC6URWIQ7QXCZDQ5FS6WIBBFRORR\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: {0}\r\n\
+\r\n\
+{1}\r\n\
+\r\n\
+'.format(content_length, UTF8_PAYLOAD)
+
+
 class TestWarcFileWriter:
-    warc_fname = '/tmp/test.warc.gz'
+    warc_fname = "/tmp/test.warc.gz"
+    collection_name = "example"
+
+    def setup_method(self):
+        self.writer = WarcFileWriter(collection_name=self.collection_name, warc_fname=self.warc_fname)
 
     def test_write_warcinfo_record(self, fs):
         fs.create_file(self.warc_fname)
-        collection_name = 'example'
-        wfw = WarcFileWriter(collection_name=collection_name, warc_fname=self.warc_fname)
 
         # Confidence test
-        warcinfo = gzip.open('/tmp/test.warc.gz', 'rb').read().decode()
-        assert warcinfo == ''
+        warcinfo = gzip.open(self.warc_fname, "rb").read().decode()
+        assert warcinfo == ""
 
         # Write warcinfo record and check output
-        wfw.write_warcinfo(robotstxt_obey=True)
-        warcinfo = gzip.open('/tmp/test.warc.gz', 'rb').read().decode()
+        self.writer.write_warcinfo(robotstxt_obey=True)
+        warcinfo = gzip.open(self.warc_fname, "rb").read().decode()
         
-        assert 'WARC/1.0' in warcinfo
-        assert 'WARC-Type: warcinfo' in warcinfo
-        assert 'WARC-Record-ID:' in warcinfo
-        assert 'WARC-Filename: /tmp/test.warc.gz' in warcinfo
-        assert 'Content-Type: application/warc-fields' in warcinfo
-        assert f'isPartOf: {collection_name}' in warcinfo
-        assert 'robots: obey' in warcinfo
+        assert "WARC/1.0" in warcinfo
+        assert "WARC-Type: warcinfo" in warcinfo
+        assert "WARC-Record-ID:" in warcinfo
+        assert "WARC-Filename: /tmp/test.warc.gz" in warcinfo
+        assert "Content-Type: application/warc-fields" in warcinfo
+        assert f"isPartOf: {self.collection_name}" in warcinfo
+        assert "robots: obey" in warcinfo
+
+    def test_write_warcrequest_record(self, fs):
+        fs.create_file(self.warc_fname)
+
+        # Confidence test
+        warc_data = gzip.open(self.warc_fname, 'rb').read().decode()
+        assert warc_data == ''
+
+        # Write request record and check output
+        request = Request("http://www.example.com", meta={'WARC-Date': '2000-01-01T00:00:00Z'})
+        warc_response_record = ArcWarcRecordLoader().parse_record_stream(BytesIO(UTF8_RECORD.encode('utf-8')))
+        self.writer.write_request(request=request, concurrent_to=warc_response_record)
+        warc_request_record = gzip.open(self.warc_fname, 'rb').read().decode()
+
+        assert 'WARC/1.0' in warc_request_record
+        assert 'WARC-Type: request' in warc_request_record
+        assert 'WARC-Record-ID:' in warc_request_record
+        assert 'WARC-Concurrent-To: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>' in warc_request_record
+        assert 'Content-Type: application/http; msgtype=request' in warc_request_record
+
+    def test_write_warcresponse_record(self, fs):
+        fs.create_file(self.warc_fname)
+
+        # Confidence test
+        warc_data = gzip.open(self.warc_fname, 'rb').read().decode()
+        assert warc_data == ''
+
+        # Write response record and check output
+        request = Request("http://www.example.com", meta={'WARC-Date': '2000-01-01T00:00:00Z'})
+        response = Response("http://www.example.com")
+        self.writer.write_response(request=request, response=response)
+        warc_response_record = gzip.open(self.warc_fname, 'rb').read().decode()
+
+        assert 'WARC/1.0' in warc_response_record
+        assert 'WARC-Type: response' in warc_response_record
+        assert 'WARC-Record-ID:' in warc_response_record
+        assert 'Content-Type: application/http; msgtype=response' in warc_response_record

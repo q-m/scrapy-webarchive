@@ -19,6 +19,7 @@ def test_cdxj_record_valid():
     assert record.day == "03"
     assert record.data == {"url": "http://example.com/index", "status": "200"}
     assert record.datetime == "20241003000000"
+    assert str(record)
 
 
 def test_cdxj_record_invalid_format():
