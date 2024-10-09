@@ -5,9 +5,15 @@ import zipfile
 from collections import defaultdict
 
 from cdxj_indexer.main import CDXJIndexer
-from warc import WARCReader
+from warc import WARCReader as BaseWARCReader
 
 from scrapy_webarchive.cdxj import CdxjRecord
+
+
+class WARCReader(BaseWARCReader):
+    """WARC reader with compatibility for WARC version 1.0 and 1.1"""
+
+    SUPPORTED_VERSIONS = ["1.0", "1.1"]
 
 
 class WaczFileCreator:
@@ -165,10 +171,27 @@ class WaczFile:
 
     @staticmethod
     def _get_index(wacz_file):
-        try:
-            return wacz_file.open("indexes/index.cdxj")
-        except KeyError:
-            return gzip.open(wacz_file.open("indexes/index.cdxj.gz"))
+        """Opens the index file from the WACZ archive, checking for .cdxj, .cdxj.gz, .cdx. and .cdx.gz"""
+
+        index_paths = [
+            "indexes/index.cdxj",
+            "indexes/index.cdxj.gz",
+            "indexes/index.cdx",
+            "indexes/index.cdx.gz",
+        ]
+
+        # Try opening each possible index file
+        for index_path in index_paths:
+            try:
+                if index_path.endswith(".gz"):
+                    return gzip.open(wacz_file.open(index_path))
+                else:
+                    return wacz_file.open(index_path)
+            except KeyError:
+                # Try the next file if this one is not found
+                continue
+
+        raise FileNotFoundError("No valid index file found.")
 
     @staticmethod
     def _parse_index(index_file):
