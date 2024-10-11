@@ -14,16 +14,16 @@ class TestWaczMiddleware:
     def setup_method(self):
         self.crawler = get_crawler(Spider)
         self.spider = self.crawler._create_spider("quotes")
-    
+
     def _get_settings(self, **new_settings):
         settings = {
-            "WACZ_SOURCE_URL": get_test_data_path("quotes.wacz.gz").as_uri(),
+            "WACZ_SOURCE_URL": get_test_data_path("warc_1_1", "quotes.wacz.gz").as_uri(),
             "WACZ_CRAWL": False,
             "WACZ_TIMEOUT": 60,
         }
         settings.update(new_settings)
         return Settings(settings)
-
+    
     @contextmanager
     def _middleware(self, **new_settings):
         settings = self._get_settings(**new_settings)

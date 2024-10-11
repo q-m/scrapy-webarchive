@@ -1,0 +1,1 @@
+Example data was generated using https://github.com/webrecorder/archiveweb.page v0.12.8. The data in this folder is based on the WARC Format 1.1 (https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/)

@@ -7,7 +7,7 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.http.request import Request
 from scrapy.http.response import Response
-from scrapy.pipelines import files
+from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S3FilesStore
 from scrapy.settings import Settings
 from typing_extensions import Self
 
@@ -20,11 +20,11 @@ class WaczExporter:
     """WACZ exporter extension that writes spider requests/responses as WACZ during a crawl job."""
 
     STORE_SCHEMES = {
-        "": files.FSFilesStore,
-        "file": files.FSFilesStore,
-        "s3": files.S3FilesStore,
-        "gs": files.GCSFilesStore,
-        "ftp": files.FTPFilesStore,
+        "": FSFilesStore,
+        "file": FSFilesStore,
+        "s3": S3FilesStore,
+        "gs": GCSFilesStore,
+        "ftp": FTPFilesStore,
     }
 
     def __init__(self, settings: Settings, crawler: Crawler) -> None:
@@ -36,7 +36,18 @@ class WaczExporter:
 
         self.store = self._get_store()
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
-        self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
+
+    def _get_store(self):
+        archive_uri_template = self.settings["ARCHIVE_EXPORT_URI"]
+        uri = archive_uri_template.format(**get_archive_uri_template_variables())
+    
+        if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
+            scheme = "file"
+        else:
+            scheme = urlparse(uri).scheme
+
+        store_cls = self.STORE_SCHEMES[scheme]
+        return store_cls(uri)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
@@ -49,6 +60,7 @@ class WaczExporter:
 
         crawler.signals.connect(exporter.response_received, signal=signals.response_received)
         crawler.signals.connect(exporter.spider_closed, signal=signals.spider_closed)
+        crawler.signals.connect(exporter.spider_opened, signal=signals.spider_opened)
         return exporter
     
     @classmethod
@@ -74,6 +86,9 @@ class WaczExporter:
 
         return cls(settings=settings, crawler=crawler)
 
+    def spider_opened(self) -> None:
+        self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
+
     def response_received(self, response: Response, request: Request, spider: Spider) -> None:
         request.meta["WARC-Date"] = warc_date()
 
@@ -93,24 +108,13 @@ class WaczExporter:
         wacz_creator = WaczFileCreator(warc_fname=self.writer.warc_fname, store=self.store)
         wacz_creator.create_wacz()
 
-    def _get_context_variables(self):
-        current_date = datetime.now()
 
-        return {
-            "year": current_date.strftime("%Y"),
-            "month": current_date.strftime("%m"),
-            "day": current_date.strftime("%d"),
-            "timestamp": current_date.strftime("%Y%m%d%H%M%S"),
-        }
+def get_archive_uri_template_variables() -> dict:
+    current_date = datetime.now()
 
-    def _get_store(self):
-        archive_uri_template = self.settings["ARCHIVE_EXPORT_URI"]
-        uri = archive_uri_template.format(**self._get_context_variables())
-    
-        if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
-            scheme = "file"
-        else:
-            scheme = urlparse(uri).scheme
-
-        store_cls = self.STORE_SCHEMES[scheme]
-        return store_cls(uri)
+    return {
+        "year": current_date.strftime("%Y"),
+        "month": current_date.strftime("%m"),
+        "day": current_date.strftime("%d"),
+        "timestamp": current_date.strftime("%Y%m%d%H%M%S"),
+    }
