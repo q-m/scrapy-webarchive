@@ -4,10 +4,9 @@ import os
 import zipfile
 from collections import defaultdict
 
-from cdxj_indexer.main import CDXJIndexer
 from warc import WARCReader as BaseWARCReader
 
-from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index
 
 
 class WARCReader(BaseWARCReader):
@@ -29,39 +28,49 @@ class WaczFileCreator:
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
 
-    def create_wacz(self) -> None:
-        """Create the WACZ file from the WARC"""
+    def create(self):
+        """Create the WACZ file from the WARC and CDXJ index"""
 
-        zip_buffer = io.BytesIO()
+        # Write cdxj index to a temporary file
+        write_cdxj_index(output=self.cdxj_fname, inputs=[self.warc_fname])
 
-        # Write index
-        wacz_indexer = CDXJIndexer(
-            output=self.cdxj_fname,
-            inputs=[self.warc_fname],
-        )
-        wacz_indexer.process_all()
+        # Create the WACZ archive in memory
+        zip_buffer = self.create_wacz_zip()
 
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add the cdxj file to the WACZ
-            with open(self.cdxj_fname, "rb") as in_fh:
-                file_content = in_fh.read()  # Read file content
-                zip_file.writestr("indexes/" + os.path.basename(self.cdxj_fname), file_content)
+        # Cleanup the temporary files
+        self.cleanup_files(self.cdxj_fname, self.warc_fname)
 
-            os.remove(self.cdxj_fname)  # Remove original cdxj file
-
-            # Write WARC file to the WACZ
-            with open(self.warc_fname, "rb") as in_fh:
-                file_content = in_fh.read()  # Read file content
-                zip_file.writestr("archive/" + os.path.basename(self.warc_fname), file_content)
-
-            os.remove(self.warc_fname)  # Remove original WARC file
-
+        # Save WACZ to the storage
         zip_buffer.seek(0)
         self.store.persist_file(self.get_wacz_fname(), zip_buffer, info=None)
 
+    def create_wacz_zip(self) -> io.BytesIO:
+        """Create the WACZ zip file and return the in-memory buffer."""
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            self.write_to_zip(zip_file, self.cdxj_fname, "indexes/")
+            self.write_to_zip(zip_file, self.warc_fname, "archive/")
+
+        return zip_buffer
+
+    def write_to_zip(self, zip_file: zipfile.ZipFile, filename: str, destination: str) -> None:
+        """Helper function to write a file into the ZIP archive."""
+
+        with open(filename, "rb") as file_handle:
+            zip_file.writestr(destination + os.path.basename(filename), file_handle.read())
+
+    def cleanup_files(self, *files: str) -> None:
+        """Remove files from the filesystem."""
+
+        for file in files:
+            os.remove(file)
+
     def get_wacz_fname(self) -> str:
-        wacz_fname = "-".join(self.warc_fname.split("-")[:2])
-        return wacz_fname + ".wacz"
+        """Generate WACZ filename based on the WARC filename."""
+
+        return "-".join(self.warc_fname.split("-")[:2]) + ".wacz"
 
 
 class MultiWaczFile:

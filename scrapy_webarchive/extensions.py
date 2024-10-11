@@ -105,8 +105,7 @@ class WaczExporter:
         self.stats.inc_value("wacz/exporter/request_written", spider=spider)
 
     def spider_closed(self) -> None:
-        wacz_creator = WaczFileCreator(warc_fname=self.writer.warc_fname, store=self.store)
-        wacz_creator.create_wacz()
+        WaczFileCreator(warc_fname=self.writer.warc_fname, store=self.store).create()
 
 
 def get_archive_uri_template_variables() -> dict:
