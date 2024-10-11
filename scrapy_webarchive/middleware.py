@@ -52,26 +52,25 @@ class WaczCrawlMiddleware:
         if not self.crawl:
             for request in start_requests:
                 yield request
+        else:  # ignore original start requests, just yield all responses found
+            for entry in self.wacz.iter_index():
+                url = entry["url"]
 
-        # ignore original start requests, just yield all responses found
-        for entry in self.wacz.iter_index():
-            url = entry["url"]
+                # filter out off-site responses
+                if hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains:
+                    continue
 
-            # filter out off-site responses
-            if hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains:
-                continue
+                # only accept allowed responses if requested by spider
+                if hasattr(spider, "archive_regex") and not re.search(spider.archive_regex, url):
+                    continue
 
-            # only accept whitelisted responses if requested by spider
-            if hasattr(spider, "archive_regexp") and not re.search(spider.archive_regexp, url):
-                continue
+                self.stats.inc_value("wacz/start_request_count", spider=spider)
 
-            self.stats.inc_value("wacz/start_request_count", spider=spider)
-
-            # do not filter to allow all occurences to be handled
-            # since we don't yet get all information for the request, this can be necessary
-            yield record_transformer.request_for_record(
-                entry,
-                flags=["wacz_start_request"],
-                meta={"wacz_index_entry": entry},
-                dont_filter=True,
-            )
+                # do not filter to allow all occurences to be handled
+                # since we don't yet get all information for the request, this can be necessary
+                yield record_transformer.request_for_record(
+                    entry,
+                    flags=["wacz_start_request"],
+                    meta={"wacz_index_entry": entry},
+                    dont_filter=True,
+                )
