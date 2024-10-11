@@ -2,11 +2,18 @@
 import json
 import re
 
+from cdxj_indexer.main import CDXJIndexer
+
 CDXREC = re.compile(
     r"^(?P<surt>(?P<host>[^\)\s]+)\)(?P<path>[^\?\s]+)?(\?(?P<query>\S+))?)"
     r"\s(?P<datetime>(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})(?P<second>\d{2})(?:\d{3})?)"
     r"\s(?P<data>{.*})"
 )
+
+def write_cdxj_index(output: str, inputs: list[str]) -> str:
+    wacz_indexer = CDXJIndexer(output=output, inputs=inputs)
+    wacz_indexer.process_all()
+    return output
 
 
 class CdxjRecord:
