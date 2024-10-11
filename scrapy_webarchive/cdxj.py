@@ -1,19 +1,15 @@
-# based on https://github.com/internetarchive/cdx-summary/blob/main/cdxsummary/parser.py
 import json
 import re
+from typing import List
 
 from cdxj_indexer.main import CDXJIndexer
 
+# based on https://github.com/internetarchive/cdx-summary/blob/main/cdxsummary/parser.py
 CDXREC = re.compile(
     r"^(?P<surt>(?P<host>[^\)\s]+)\)(?P<path>[^\?\s]+)?(\?(?P<query>\S+))?)"
     r"\s(?P<datetime>(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})(?P<second>\d{2})(?:\d{3})?)"
     r"\s(?P<data>{.*})"
 )
-
-def write_cdxj_index(output: str, inputs: list[str]) -> str:
-    wacz_indexer = CDXJIndexer(output=output, inputs=inputs)
-    wacz_indexer.process_all()
-    return output
 
 
 class CdxjRecord:
@@ -34,3 +30,9 @@ class CdxjRecord:
 
     def __str__(self):
         return str(self.__dict__)
+
+
+def write_cdxj_index(output: str, inputs: List[str]) -> str:
+    wacz_indexer = CDXJIndexer(output=output, inputs=inputs)
+    wacz_indexer.process_all()
+    return output
