@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 from scrapy.exceptions import NotConfigured
+from scrapy.http import Request, Response
 from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S3FilesStore
 from scrapy.utils.test import get_crawler
 
@@ -38,3 +39,25 @@ class TestWaczExporterExtension:
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, FTPFilesStore)
+
+    def test_response_received(self):
+        crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "/tmp/scrapy-webarchive/wacz/"})
+        crawler.spider = crawler._create_spider("quotes")
+        extension = WaczExporter.from_crawler(crawler)
+        extension.writer = mock.Mock()
+
+        # Call the method under test
+        request = Request("http://example.com")
+        response = Response(request.url)
+        extension.response_received(response, request, crawler.spider)
+
+        # Verify that the WARC date was set in request meta
+        assert "WARC-Date" in request.meta
+
+        # Verify that the response and request were written to the WARC file
+        extension.writer.write_response.assert_called_once()
+        extension.writer.write_request.assert_called_once()
+
+        # Verify that the stats were incremented correctly
+        assert extension.stats._stats['wacz/exporter/response_written'] == 1
+        assert extension.stats._stats['wacz/exporter/request_written'] == 1
