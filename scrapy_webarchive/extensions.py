@@ -31,14 +31,14 @@ class WaczExporter:
         self.settings = settings
         self.stats = crawler.stats
 
-        if not self.settings["ARCHIVE_EXPORT_URI"]:
+        if not self.settings["SW_EXPORT_URI"]:
             raise NotConfigured
 
         self.store = self._get_store()
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
 
     def _get_store(self):
-        archive_uri_template = self.settings["ARCHIVE_EXPORT_URI"]
+        archive_uri_template = self.settings["SW_EXPORT_URI"]
         uri = archive_uri_template.format(**get_archive_uri_template_variables())
     
         if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
