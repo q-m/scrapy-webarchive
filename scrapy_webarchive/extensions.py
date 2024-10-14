@@ -11,7 +11,7 @@ from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S
 from scrapy.settings import Settings
 from typing_extensions import Self
 
-from scrapy_webarchive.utils import warc_date
+from scrapy_webarchive.utils import get_warc_date
 from scrapy_webarchive.wacz import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -90,7 +90,7 @@ class WaczExporter:
         self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
 
     def response_received(self, response: Response, request: Request, spider: Spider) -> None:
-        request.meta["WARC-Date"] = warc_date()
+        request.meta["WARC-Date"] = get_warc_date()
 
         # Write response WARC record
         record = self.writer.write_response(response, request)
