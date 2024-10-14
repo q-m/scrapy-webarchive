@@ -16,15 +16,15 @@ from scrapy_webarchive.warc import WarcFileWriter, generate_warc_fname, record_t
 
 @freeze_time("2024-10-04 08:27:11")
 def test_generate_warc_fname(monkeypatch):
-    prefix = "rec"
+    prefix = "example"
     monkeypatch.setattr(socket, "gethostname", lambda: "example.local")
-    assert generate_warc_fname(prefix) == "rec-20241004082711-00000-example.warc.gz"
+    assert generate_warc_fname(prefix) == "example-20241004082711-00000-example.warc.gz"
 
 
 @pytest.fixture
 def warc_record_response():
     payload = b"""HTTP/1.0 200\r\nContent-Length: 11064\r\nDate: Mon, 07 Oct 2024 09:58:44 GMT\r\nContent-Type: text/html; charset=utf-8\r\nStrict-Transport-Security: max-age=0; includeSubDomains; preload\r\n\r\n<!DOCTYPE html>\n<html lang="en">Welcome to scrapy-webarchive!</html>"""
-    return WARCRecord(payload=payload, headers={"WARC-Target-URI": "https://quotes.toscrape.com/"})
+    return WARCRecord(payload=payload, headers={"WARC-Target-URI": "http://example.com"})
 
 
 @pytest.fixture
@@ -35,18 +35,18 @@ def warc_record_request():
 class TestWarcRecordTransformer:
     def test_request_for_record(self):
         record = {
-            "url": "https://quotes.toscrape.com/", 
+            "url": "http://example.com", 
             "mime": "text/html", 
             "status": "200", 
             "digest": "sha1:AA7J5JETQ4H7GG22MU2NCAUO6LM2EPEU", 
             "length": "2302", 
             "offset": "384", 
-            "filename": "quotes-20241007095844-00000-BA92-CKXFG4FF6H.warc.gz",
+            "filename": "example-20241007095844-00000-BA92-CKXFG4FF6H.warc.gz",
         }
         
         request = record_transformer.request_for_record(record)
         assert isinstance(request, Request)
-        assert request.url == "https://quotes.toscrape.com/"
+        assert request.url == "http://example.com"
         assert request.method == "GET"
 
     def test_response_for_record_invalid_response_type(self, warc_record_request):
@@ -56,7 +56,7 @@ class TestWarcRecordTransformer:
     def test_response_for_record(self, warc_record_response):
         response = record_transformer.response_for_record(warc_record_response)
         assert isinstance(response, HtmlResponse)
-        assert response.url == "https://quotes.toscrape.com/"
+        assert response.url == "http://example.com"
         assert response.status == 200
         assert response.body == b'<!DOCTYPE html>\n<html lang="en">Welcome to scrapy-webarchive!</html>'
 
@@ -64,7 +64,7 @@ class TestWarcRecordTransformer:
 UTF8_PAYLOAD = u'\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
-Content-Disposition: attachment; filename="испытание.txt"\r\n\
+Content-Disposition: attachment; filename="example.txt"\r\n\
 Custom-Header: somevalue\r\n\
 Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
 \r\n\

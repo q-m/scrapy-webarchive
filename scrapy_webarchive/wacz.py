@@ -102,11 +102,6 @@ class MultiWaczFile:
             for r in f.iter_index():
                 yield {**r, "_wacz_file": f}
 
-    def iter_warc(self):
-        for f in self.waczs:
-            for r in f.iter_warc():
-                yield r
-
 
 class WaczFile:
     """
@@ -163,21 +158,6 @@ class WaczFile:
             for record in records:
                 yield record
 
-    def iter_warc(self):
-        for entry in self.wacz_file.infolist():
-            if entry.is_dir():
-                continue
-
-            if not entry.filename.startswith("archive/"):
-                continue
-
-            warc_file = self.wacz_file.open(entry)
-            if entry.filename.endswith(".gz"):
-                warc_file = gzip.open(warc_file)
-
-            reader = WARCReader(warc_file)
-            for record in reader:
-                yield record
 
     @staticmethod
     def _get_index(wacz_file):
