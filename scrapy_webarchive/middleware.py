@@ -16,14 +16,14 @@ from scrapy_webarchive.warc import record_transformer
 class WaczCrawlMiddleware:
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
-        wacz_url = settings.get("WACZ_SOURCE_URL", None)
+        wacz_url = settings.get("SW_WACZ_SOURCE_URL", None)
 
         if not wacz_url:
             raise NotConfigured
 
         self.wacz_urls = re.split(r"\s*,\s*", wacz_url)
-        self.crawl = settings.get("WACZ_CRAWL", False)
-        self.timeout = settings.getfloat("WACZ_TIMEOUT", 60)
+        self.crawl = settings.get("SW_WACZ_CRAWL", False)
+        self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60)
  
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:

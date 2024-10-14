@@ -19,22 +19,22 @@ class TestWaczExporterExtension:
     @mock.patch('scrapy_webarchive.extensions.FTPFilesStore.__init__', return_value=None)
     @mock.patch('scrapy_webarchive.extensions.FSFilesStore.__init__', return_value=None)
     def test_get_store(self, *args):
-        crawler = get_crawler(settings_dict={"ARCHIVE_EXPORT_URI": "/tmp/scrapy-webarchive/wacz/"})
+        crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "/tmp/scrapy-webarchive/wacz/"})
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, FSFilesStore)
     
-        crawler = get_crawler(settings_dict={"ARCHIVE_EXPORT_URI": "s3://scrapy-webarchive/wacz/"})
+        crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "s3://scrapy-webarchive/wacz/"})
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, S3FilesStore)
 
-        crawler = get_crawler(settings_dict={"ARCHIVE_EXPORT_URI": "gs://scrapy-webarchive/wacz/"})
+        crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "gs://scrapy-webarchive/wacz/"})
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, GCSFilesStore)
 
-        crawler = get_crawler(settings_dict={"ARCHIVE_EXPORT_URI": "ftp://scrapy-webarchive/wacz/"})
+        crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "ftp://scrapy-webarchive/wacz/"})
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, FTPFilesStore)
