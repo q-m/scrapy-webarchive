@@ -8,4 +8,5 @@ theme:
 nav:
 - Introduction: index.md
 - installation.md
+- usage.md
 - settings.md
