@@ -2,6 +2,7 @@ import zipfile
 from unittest.mock import Mock
 
 import pytest
+from freezegun import freeze_time
 
 from scrapy_webarchive.wacz import WaczFileCreator
 
@@ -16,6 +17,7 @@ class TestWaczFileCreator:
         cdxj_fname = "/scrapy-webarchive/index.cdxj"
         return WaczFileCreator(store=store, warc_fname=warc_fname, cdxj_fname=cdxj_fname)
 
+    @freeze_time("2024-10-04 08:27:11")
     def test_create_wacz(self, fs, wacz_file_creator):
         # Setup the fake filesystem
         fs.create_file("/scrapy-webarchive/index.cdxj", contents="")
@@ -32,7 +34,7 @@ class TestWaczFileCreator:
         wacz_file_creator.store.persist_file.assert_called_once()
 
         # Assert that the correct WACZ filename was used
-        assert wacz_fname == "/scrapy-webarchive/quotes-20241007000000.wacz"
+        assert wacz_fname == "archive-20241004082711.wacz"
 
         # Retrieve the zip buffer from the call args
         call_args = wacz_file_creator.store.persist_file.call_args

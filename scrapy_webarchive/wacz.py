@@ -7,6 +7,7 @@ from collections import defaultdict
 from warc import WARCReader as BaseWARCReader
 
 from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index
+from scrapy_webarchive.utils import get_current_timestamp
 
 
 class WARCReader(BaseWARCReader):
@@ -70,7 +71,7 @@ class WaczFileCreator:
     def get_wacz_fname(self) -> str:
         """Generate WACZ filename based on the WARC filename."""
 
-        return "-".join(self.warc_fname.split("-")[:2]) + ".wacz"
+        return f"archive-{get_current_timestamp()}.wacz"
 
 
 class MultiWaczFile:

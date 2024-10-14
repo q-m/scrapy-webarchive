@@ -1,8 +1,15 @@
 from datetime import datetime, timezone
 
+WARC_DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+TIMESTAMP_DT_FORMAT = "%Y%m%d%H%M%S"
 
-def warc_date() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def get_current_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime(TIMESTAMP_DT_FORMAT)
+
+
+def get_warc_date() -> str:
+    return datetime.now(timezone.utc).strftime(WARC_DT_FORMAT)
 
 
 def header_lines_to_dict(lines):
