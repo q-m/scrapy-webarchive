@@ -24,7 +24,7 @@ Running a crawl job using these settings will result in a newly created WACZ fil
 
 There are 2 ways to crawl against a WACZ archive. Choose a strategy that you want to use for your crawl job, and follow the instruction as described below. Using both strategies at the same time is not allowed.
 
-## Lookup in a WACZ archive
+### Lookup in a WACZ archive
 
 One of the ways to crawl against a WACZ archive is to use the `WaczMiddleware` downloader middleware. Instead of fetching the live resource the middleware will instead retrieve it from the archive and recreate a response using the data from the archive.
 
@@ -42,7 +42,7 @@ Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URL` setting:
 SW_WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz"
 ```
 
-## Iterating a WACZ archive
+### Iterating a WACZ archive
 
 Going around the default behaviour of the spider, the `WaczCrawlMiddleware` spider middleware will, when enabled, replace the crawl by an iteration through all the entries in the WACZ archive.
 
