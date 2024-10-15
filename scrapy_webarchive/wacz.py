@@ -77,7 +77,7 @@ class WaczFile:
     Can also iterate over all entries in each WARC embedded in the archive.
     """
 
-    def __init__(self, file: IO[bytes]):
+    def __init__(self, file: IO):
         self.wacz_file = zipfile.ZipFile(file)
         self.index = self._parse_index(self._get_index(self.wacz_file))
 
@@ -88,7 +88,7 @@ class WaczFile:
         return records[-1] if records else None
 
     def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:
-        warc_file: Union[gzip.GzipFile, IO[bytes]]
+        warc_file: Union[gzip.GzipFile, IO]
 
         try:
             warc_file = self.wacz_file.open("archive/" + cdxj_record.data["filename"])
@@ -111,7 +111,7 @@ class WaczFile:
                 yield cdxj_record
 
     @staticmethod
-    def _get_index(wacz_file: zipfile.ZipFile) -> Union[gzip.GzipFile, IO[bytes]]:
+    def _get_index(wacz_file: zipfile.ZipFile) -> Union[gzip.GzipFile, IO]:
         """Opens the index file from the WACZ archive, checking for .cdxj, .cdxj.gz, .cdx. and .cdx.gz"""
 
         index_paths = [
@@ -134,7 +134,7 @@ class WaczFile:
 
         raise FileNotFoundError("No valid index file found.")
 
-    def _parse_index(self, index_file: Union[gzip.GzipFile, IO[bytes]]) -> dict[str, List[CdxjRecord]]:
+    def _parse_index(self, index_file: Union[gzip.GzipFile, IO]) -> dict[str, List[CdxjRecord]]:
         cdxj_records = defaultdict(list)
 
         for line in index_file:
@@ -152,7 +152,7 @@ class MultiWaczFile:
     Supports the same things as WACZFile, but handles multiple WACZ files underneath.
     """
 
-    def __init__(self, wacz_files: List[IO[bytes]]) -> None:
+    def __init__(self, wacz_files: List[IO]) -> None:
         self.waczs = [WaczFile(wacz_file) for wacz_file in wacz_files]
 
     def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:

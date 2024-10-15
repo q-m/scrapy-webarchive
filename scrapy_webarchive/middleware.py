@@ -39,7 +39,7 @@ class BaseWaczMiddleware:
         tp = {"timeout": self.timeout}
         multiple_entries = len(self.wacz_urls) != 1
 
-        def open_wacz_file(wacz_url: str) -> Union[IO[bytes], None]:
+        def open_wacz_file(wacz_url: str) -> Union[IO, None]:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
             
             try:
@@ -54,7 +54,7 @@ class BaseWaczMiddleware:
             if wacz_file:
                 self.wacz = WaczFile(wacz_file)
         else:
-            wacz_files: List[IO[bytes]] = []
+            wacz_files: List[IO] = []
 
             for wacz_url in self.wacz_urls:
                 wacz_file = open_wacz_file(wacz_url)
