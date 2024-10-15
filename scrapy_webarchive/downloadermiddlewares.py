@@ -1,5 +1,5 @@
 import re
-from typing import IO, List
+from typing import IO, List, Union
 
 from scrapy import signals
 from scrapy.crawler import Crawler
@@ -24,7 +24,7 @@ class WaczMiddleware:
     This helps to work with large archives, including remote ones.
     """
     
-    wacz: WaczFile | MultiWaczFile
+    wacz: Union[WaczFile, MultiWaczFile]
 
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
@@ -48,7 +48,7 @@ class WaczMiddleware:
         tp = {"timeout": self.timeout}
         multiple_entries = len(self.wacz_urls) != 1
 
-        def open_wacz_file(wacz_url: str) -> IO[bytes] | None:
+        def open_wacz_file(wacz_url: str) -> Union[IO[bytes], None]:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
             
             try:
