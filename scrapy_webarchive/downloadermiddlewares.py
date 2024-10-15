@@ -1,4 +1,5 @@
 import re
+from typing import IO, List
 
 from scrapy import signals
 from scrapy.crawler import Crawler
@@ -9,7 +10,7 @@ from scrapy.settings import Settings
 from scrapy.spiders import Spider
 from scrapy.statscollectors import StatsCollector
 from smart_open import open
-from typing_extensions import Self, Union
+from typing_extensions import Self
 
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
@@ -22,6 +23,8 @@ class WaczMiddleware:
     Loads the index fully into memory, but lazily loads pages.
     This helps to work with large archives, including remote ones.
     """
+    
+    wacz: WaczFile | MultiWaczFile
 
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
@@ -43,22 +46,40 @@ class WaczMiddleware:
 
     def spider_opened(self, spider: Spider) -> None:
         tp = {"timeout": self.timeout}
-        self.wacz: Union[WaczFile, MultiWaczFile]
+        multiple_entries = len(self.wacz_urls) != 1
 
-        if len(self.wacz_urls) == 1:
-            spider.logger.info(f"[WACZDownloader] Opening WACZ {self.wacz_urls[0]}")
-            self.wacz = WaczFile(open(self.wacz_urls[0], "rb", transport_params=tp))
+        def open_wacz_file(wacz_url: str) -> IO[bytes] | None:
+            spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
+            
+            try:
+                return open(wacz_url, "rb", transport_params=tp)
+            except OSError:
+                spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_url}")
+                return None
+
+        if not multiple_entries:
+            wacz_url = self.wacz_urls[0]
+            wacz_file = open_wacz_file(wacz_url)
+            if wacz_file:
+                self.wacz = WaczFile(wacz_file)
         else:
-            spider.logger.info(f"[WACZDownloader] Opening WACZs {self.wacz_urls}")
-            self.wacz = MultiWaczFile(
-                [open(u, "rb", transport_params=tp) for u in self.wacz_urls]
-            )
+            wacz_files: List[IO[bytes]] = []
+
+            for wacz_url in self.wacz_urls:
+                wacz_file = open_wacz_file(wacz_url)
+                if wacz_file:
+                    wacz_files.append(wacz_file)
+    
+            if wacz_files:
+                self.wacz = MultiWaczFile(wacz_files)
 
     def process_request(self, request: Request, spider: Spider):
+        if not hasattr(self, 'wacz'):
+            self.stats.set_value("wacz/no_valid_sources", True, spider=spider)
+            raise IgnoreRequest()
+
         # ignore blacklisted pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
-        if hasattr(spider, "archive_blacklist_regexp") and re.search(
-            spider.archive_blacklist_regexp, request.url
-        ):
+        if hasattr(spider, "archive_blacklist_regexp") and re.search(spider.archive_blacklist_regexp, request.url):
             self.stats.inc_value("wacz/request_blacklisted", spider=spider)
             raise IgnoreRequest()
 
@@ -68,17 +89,22 @@ class WaczMiddleware:
             raise IgnoreRequest()
 
         # get record from existing index entry, or else lookup by URL
-        record = self.wacz.get_record(request.meta.get("wacz_index_entry", request.url))
-        if record:
-            response = record_transformer.response_for_record(record)
-
-            if not response:
-                self.stats.inc_value("wacz/response_not_recognized", spider=spider)
-                raise IgnoreRequest()
-
-            self.stats.inc_value("wacz/hit", spider=spider)
-            return response
+        if request.meta.get("cdxj_record"):
+            warc_record = self.wacz.get_warc_from_cdxj_record(cdxj_record=request.meta["cdxj_record"])
         else:
-            # when page not found in archive, return 404, and record it in a statistic
+            warc_record = self.wacz.get_warc_from_url(url=request.url)
+
+        # When page not found in archive, return 404, and record it in a statistic
+        if not warc_record:
             self.stats.inc_value("wacz/response_not_found", spider=spider)
             return Response(url=request.url, status=404)
+        
+        # Record found
+        response = record_transformer.response_for_record(warc_record)
+
+        if not response:
+            self.stats.inc_value("wacz/response_not_recognized", spider=spider)
+            raise IgnoreRequest()
+
+        self.stats.inc_value("wacz/hit", spider=spider)
+        return response            

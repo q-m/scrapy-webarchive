@@ -8,7 +8,7 @@ def test_cdxj_record_valid():
     valid_cdxj_line = "com,example)/index 20241003000000 {\"url\": \"http://example.com/index\", \"status\": \"200\"}"
     
     # Create a CdxjRecord object
-    record = CdxjRecord(valid_cdxj_line)
+    record = CdxjRecord.from_cdxline(valid_cdxj_line, wacz_file=None)
     
     # Test extracted data from the CDXJ line
     assert record.surt == "com,example)/index"
@@ -28,7 +28,7 @@ def test_cdxj_record_invalid_format():
     
     # Test that the invalid line raises a ValueError
     with pytest.raises(ValueError, match=r"Invalid CDXJ line:"):
-        CdxjRecord(invalid_cdxj_line)
+        CdxjRecord.from_cdxline(invalid_cdxj_line, wacz_file=None)
 
 
 def test_cdxj_record_invalid_json_data():
@@ -37,13 +37,13 @@ def test_cdxj_record_invalid_json_data():
     
     # Test that the invalid JSON raises a ValueError
     with pytest.raises(ValueError):
-        CdxjRecord(invalid_cdxj_line)
+        CdxjRecord.from_cdxline(invalid_cdxj_line, wacz_file=None)
 
 
 def test_cdxj_record_empty_line():
     # Test that an empty line raises a ValueError
     with pytest.raises(ValueError, match=r"Invalid CDXJ line:"):
-        CdxjRecord('')
+        CdxjRecord.from_cdxline('', wacz_file=None)
 
 
 def test_cdxj_record_no_data_field():
@@ -52,4 +52,4 @@ def test_cdxj_record_no_data_field():
     
     # Test that no data field raises a ValueError
     with pytest.raises(ValueError, match=r"Invalid CDXJ line:"):
-        CdxjRecord(no_data_cdxj_line)
+        CdxjRecord.from_cdxline(no_data_cdxj_line, wacz_file=None)

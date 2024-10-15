@@ -13,6 +13,7 @@ from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import WARCWriter
 
+from scrapy_webarchive.cdxj import CdxjRecord
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.utils import get_current_timestamp, header_lines_to_dict
 
@@ -160,26 +161,26 @@ class WarcRecordTransformer:
     
     response_types = ResponseTypes()
 
-    def request_for_record(self, record: dict, **kwargs):
+    def request_for_record(self, cdxj_record: CdxjRecord, **kwargs):
         # TODO: locate request in WACZ and include all relevant things (like headers)
-        return Request(url=record["url"], method=record.get("method", "GET"), **kwargs)
+        return Request(url=cdxj_record.data["url"], method=cdxj_record.data.get("method", "GET"), **kwargs)
 
-    def response_for_record(self, record: WARCRecord, **kwargs):
+    def response_for_record(self, warc_record: WARCRecord, **kwargs):
         # We expect a response.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-type-mandatory
-        if record.type != "response":
-            raise WaczMiddlewareException(f"Unexpected record type: {record.type}")
+        if warc_record.type != "response":
+            raise WaczMiddlewareException(f"Unexpected record type: {warc_record.type}")
 
         # We only know how to handle application/http.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#content-type
-        record_content_type = (record["Content-Type"] or "").split(";", 1)[0]
+        record_content_type = (warc_record["Content-Type"] or "").split(";", 1)[0]
         if record_content_type != "application/http":
             raise WaczMiddlewareException(f"Unexpected record content-type: {record_content_type}")
 
         # There is a date field in record['WARC-Date'], but don't have a use for it now.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-date-mandatory
 
-        payload = record.payload.read()
+        payload = warc_record.payload.read()
         payload_parts = payload.split(b"\r\n\r\n", 1)
         header_lines = payload_parts[0] if len(payload_parts) > 0 else ""
         body = payload_parts[1] if len(payload_parts) > 1 else None
@@ -196,7 +197,7 @@ class WarcRecordTransformer:
         response_cls = self.response_types.from_headers(headers)
 
         return response_cls(
-            url=record.url,
+            url=warc_record.url,
             status=int(status.decode()),
             protocol=protocol.decode(),
             headers=headers,

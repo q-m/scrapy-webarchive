@@ -3,8 +3,10 @@ import io
 import os
 import zipfile
 from collections import defaultdict
+from typing import IO, Generator, List
 
 from warc import WARCReader as BaseWARCReader
+from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index
 from scrapy_webarchive.utils import get_current_timestamp
@@ -19,18 +21,13 @@ class WARCReader(BaseWARCReader):
 class WaczFileCreator:
     """Handles creating WACZ archives"""
 
-    def __init__(
-            self,
-            store,
-            warc_fname: str, 
-            cdxj_fname: str = "index.cdxj", 
-        ) -> None:
+    def __init__(self, store, warc_fname: str, cdxj_fname: str = "index.cdxj") -> None:
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
 
-    def create(self):
-        """Create the WACZ file from the WARC and CDXJ index"""
+    def create(self) -> None:
+        """Create the WACZ file from the WARC and CDXJ index and save it in the configured store"""
 
         # Write cdxj index to a temporary file
         write_cdxj_index(output=self.cdxj_fname, inputs=[self.warc_fname])
@@ -46,7 +43,7 @@ class WaczFileCreator:
         self.store.persist_file(self.get_wacz_fname(), zip_buffer, info=None)
 
     def create_wacz_zip(self) -> io.BytesIO:
-        """Create the WACZ zip file and return the in-memory buffer."""
+        """Create the WACZ zip file and return the in-memory buffer"""
 
         zip_buffer = io.BytesIO()
 
@@ -57,50 +54,21 @@ class WaczFileCreator:
         return zip_buffer
 
     def write_to_zip(self, zip_file: zipfile.ZipFile, filename: str, destination: str) -> None:
-        """Helper function to write a file into the ZIP archive."""
+        """Helper function to write a file into the ZIP archive"""
 
         with open(filename, "rb") as file_handle:
             zip_file.writestr(destination + os.path.basename(filename), file_handle.read())
 
     def cleanup_files(self, *files: str) -> None:
-        """Remove files from the filesystem."""
+        """Remove files from the filesystem"""
 
         for file in files:
             os.remove(file)
 
     def get_wacz_fname(self) -> str:
-        """Generate WACZ filename based on the WARC filename."""
+        """Generate WACZ filename based on the WARC filename"""
 
         return f"archive-{get_current_timestamp()}.wacz"
-
-
-class MultiWaczFile:
-    """
-    The MultiWACZ file format is not yet finalized, hence instead of pointing to a
-    MultiWACZ file, this just works with the multiple WACZ files.
-
-    Supports the same things as WACZFile, but handles multiple WACZ files underneath.
-    """
-
-    def __init__(self, wacz_files):
-        self.waczs = [WaczFile(f) for f in wacz_files]
-
-    def load_index(self):
-        for f in self.waczs:
-            f.load_index()
-
-    def get_record(self, url_or_record, **kwargs):
-        if not isinstance(url_or_record, str):
-            return url_or_record["_wacz_file"].get_record(url_or_record, **kwargs)
-        for f in self.waczs:
-            r = f.get_record(url_or_record, **kwargs)
-            if r:
-                return r
-
-    def iter_index(self):
-        for f in self.waczs:
-            for r in f.iter_index():
-                yield {**r, "_wacz_file": f}
 
 
 class WaczFile:
@@ -109,58 +77,41 @@ class WaczFile:
     Can also iterate over all entries in each WARC embedded in the archive.
     """
 
-    index = None
-
-    def __init__(self, file):
+    def __init__(self, file: IO[bytes]):
         self.wacz_file = zipfile.ZipFile(file)
-
-    def _find_in_index(self, url, **kwargs):
-        if not self.index:
-            self.load_index()
-
-        records = self.index.get(url, [])
-        # allow filtering on all given fields
-        for k, v in kwargs.items():
-            records = [r for r in records if r.get(k) == v]
-        if len(records) > 0:
-            # if multiple entries are present, the last one is most likely to be relevant
-            return records[-1]
-        # nothing found
-        return None
-
-    def load_index(self):
         self.index = self._parse_index(self._get_index(self.wacz_file))
 
-    def get_record(self, url_or_cdxjrecord, **kwargs):
-        if isinstance(url_or_cdxjrecord, str):
-            record = self._find_in_index(url_or_cdxjrecord, **kwargs)
-            if not record:
-                return None
-        else:
-            record = url_or_cdxjrecord
+    def _find_in_index(self, url: str) -> CdxjRecord | None:
+        records = self.index.get(url, [])
+
+        # If multiple entries are present, the last one is most likely to be relevant
+        return records[-1] if records else None
+
+    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> WARCRecord | None:
+        warc_file: gzip.GzipFile | IO[bytes]
 
         try:
-            warc_file = self.wacz_file.open("archive/" + record["filename"])
+            warc_file = self.wacz_file.open("archive/" + cdxj_record.data["filename"])
         except KeyError:
             return None
-        warc_file.seek(int(record["offset"]))
-        if record["filename"].endswith(".gz"):
+
+        warc_file.seek(int(cdxj_record.data["offset"]))
+        if cdxj_record.data["filename"].endswith(".gz"):
             warc_file = gzip.open(warc_file)
 
-        reader = WARCReader(warc_file)
-        return reader.read_record()
+        return WARCReader(warc_file).read_record()
 
-    def iter_index(self):
-        if not self.index:
-            self.load_index()
+    def get_warc_from_url(self, url: str) -> WARCRecord | None:
+        cdxj_record = self._find_in_index(url)
+        return self.get_warc_from_cdxj_record(cdxj_record) if cdxj_record else None
 
-        for records in self.index.values():
-            for record in records:
-                yield record
-
+    def iter_index(self) -> Generator[CdxjRecord, None, None]:
+        for cdxj_records in self.index.values():
+            for cdxj_record in cdxj_records:
+                yield cdxj_record
 
     @staticmethod
-    def _get_index(wacz_file):
+    def _get_index(wacz_file: zipfile.ZipFile) -> gzip.GzipFile | IO[bytes]:
         """Opens the index file from the WACZ archive, checking for .cdxj, .cdxj.gz, .cdx. and .cdx.gz"""
 
         index_paths = [
@@ -183,13 +134,40 @@ class WaczFile:
 
         raise FileNotFoundError("No valid index file found.")
 
-    @staticmethod
-    def _parse_index(index_file):
-        records = defaultdict(list)
+    def _parse_index(self, index_file: gzip.GzipFile | IO[bytes]) -> dict[str, List[CdxjRecord]]:
+        cdxj_records = defaultdict(list)
 
         for line in index_file:
-            record = CdxjRecord(line.decode())
-            url = record.data["url"]
-            records[url].append(record.data)
+            cdxj_record = CdxjRecord.from_cdxline(line.decode(), wacz_file=self)
+            cdxj_records[cdxj_record.data["url"]].append(cdxj_record)
 
-        return records
+        return cdxj_records
+
+
+class MultiWaczFile:
+    """
+    The MultiWACZ file format is not yet finalized, hence instead of pointing to a
+    MultiWACZ file, this just works with the multiple WACZ files.
+
+    Supports the same things as WACZFile, but handles multiple WACZ files underneath.
+    """
+
+    def __init__(self, wacz_files: List[IO[bytes]]) -> None:
+        self.waczs = [WaczFile(wacz_file) for wacz_file in wacz_files]
+
+    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> WARCRecord | None:
+        return cdxj_record.wacz_file.get_warc_from_cdxj_record(cdxj_record) if cdxj_record.wacz_file else None
+        
+    def get_warc_from_url(self, url: str) -> WARCRecord | None:
+        for wacz in self.waczs:
+            warc_record = wacz.get_warc_from_url(url)
+            if warc_record:
+                return warc_record
+            
+        return None
+
+    def iter_index(self) -> Generator[CdxjRecord, None, None]:
+        for wacz in self.waczs:
+            for cdxj_record in wacz.iter_index():
+                cdxj_record.wacz_file = wacz
+                yield cdxj_record

@@ -10,6 +10,7 @@ from scrapy.http.response import Response
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecordLoader
 
+from scrapy_webarchive.cdxj import CdxjRecord
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.warc import WarcFileWriter, generate_warc_fname, record_transformer
 
@@ -34,15 +35,20 @@ def warc_record_request():
 
 class TestWarcRecordTransformer:
     def test_request_for_record(self):
-        record = {
+        record = CdxjRecord(
+            wacz_file=None,
+            surt="com,example)/index",
+            host="example",
+            data={
             "url": "http://example.com", 
-            "mime": "text/html", 
-            "status": "200", 
-            "digest": "sha1:AA7J5JETQ4H7GG22MU2NCAUO6LM2EPEU", 
-            "length": "2302", 
-            "offset": "384", 
-            "filename": "example-20241007095844-00000-BA92-CKXFG4FF6H.warc.gz",
-        }
+                "mime": "text/html", 
+                "status": "200", 
+                "digest": "sha1:AA7J5JETQ4H7GG22MU2NCAUO6LM2EPEU", 
+                "length": "2302", 
+                "offset": "384", 
+                "filename": "example-20241007095844-00000-BA92-CKXFG4FF6H.warc.gz",
+            }
+        )
         
         request = record_transformer.request_for_record(record)
         assert isinstance(request, Request)

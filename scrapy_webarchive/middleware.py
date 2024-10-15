@@ -1,4 +1,5 @@
 import re
+from typing import IO, List
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -7,13 +8,15 @@ from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
 from smart_open import open
-from typing_extensions import Iterable, Self, Union
+from typing_extensions import Iterable, Self
 
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
 
 
 class WaczCrawlMiddleware:
+    wacz: WaczFile | MultiWaczFile
+    
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
         wacz_url = settings.get("SW_WACZ_SOURCE_URL", None)
@@ -37,24 +40,42 @@ class WaczCrawlMiddleware:
             return
 
         tp = {"timeout": self.timeout}
-        self.wacz: Union[WaczFile, MultiWaczFile]
+        multiple_entries = len(self.wacz_urls) != 1
 
-        if len(self.wacz_urls) == 1:
-            spider.logger.info(f"[WACZDownloader] Opening WACZ {self.wacz_urls[0]}")
-            self.wacz = WaczFile(open(self.wacz_urls[0], "rb", transport_params=tp))
+        def open_wacz_file(wacz_url: str) -> IO[bytes] | None:
+            spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
+            
+            try:
+                return open(wacz_url, "rb", transport_params=tp)
+            except OSError:
+                spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_url}")
+                return None
+
+        if not multiple_entries:
+            wacz_url = self.wacz_urls[0]
+            wacz_file = open_wacz_file(wacz_url)
+            if wacz_file:
+                self.wacz = WaczFile(wacz_file)
         else:
-            spider.logger.info(f"[WACZDownloader] Opening WACZs {self.wacz_urls}")
-            self.wacz = MultiWaczFile(
-                [open(u, "rb", transport_params=tp) for u in self.wacz_urls]
-            )
+            wacz_files: List[IO[bytes]] = []
+
+            for wacz_url in self.wacz_urls:
+                wacz_file = open_wacz_file(wacz_url)
+                if wacz_file:
+                    wacz_files.append(wacz_file)
+    
+            if wacz_files:
+                self.wacz = MultiWaczFile(wacz_files)
 
     def process_start_requests(self, start_requests: Iterable[Request], spider: Spider):
-        if not self.crawl:
+        if not self.crawl or not hasattr(self, 'wacz'):
             for request in start_requests:
                 yield request
-        else:  # ignore original start requests, just yield all responses found
+
+        # Ignore original start requests, just yield all responses found
+        else:
             for entry in self.wacz.iter_index():
-                url = entry["url"]
+                url = entry.data["url"]
 
                 # filter out off-site responses
                 if hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains:
@@ -71,6 +92,6 @@ class WaczCrawlMiddleware:
                 yield record_transformer.request_for_record(
                     entry,
                     flags=["wacz_start_request"],
-                    meta={"wacz_index_entry": entry},
+                    meta={"cdxj_record": entry},
                     dont_filter=True,
                 )
