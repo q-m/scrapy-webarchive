@@ -3,7 +3,7 @@ import io
 import os
 import zipfile
 from collections import defaultdict
-from typing import IO, Generator, List, Union
+from typing import IO, Generator, List, Union, Dict
 
 from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
@@ -134,7 +134,7 @@ class WaczFile:
 
         raise FileNotFoundError("No valid index file found.")
 
-    def _parse_index(self, index_file: Union[gzip.GzipFile, IO]) -> dict[str, List[CdxjRecord]]:
+    def _parse_index(self, index_file: Union[gzip.GzipFile, IO]) -> Dict[str, List[CdxjRecord]]:
         cdxj_records = defaultdict(list)
 
         for line in index_file:
