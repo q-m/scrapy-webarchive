@@ -3,7 +3,7 @@ import io
 import os
 import zipfile
 from collections import defaultdict
-from typing import IO, Generator, List, Union, Dict
+from typing import IO, Dict, Generator, List, Union
 
 from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
