@@ -104,8 +104,8 @@ class WaczExporter:
         self.writer.write_request(request, concurrent_to=record)
         self.stats.inc_value("wacz/exporter/request_written", spider=spider)
 
-    def spider_closed(self) -> None:
-        WaczFileCreator(warc_fname=self.writer.warc_fname, store=self.store).create()
+    def spider_closed(self, spider: Spider) -> None:
+        WaczFileCreator(store=self.store, warc_fname=self.writer.warc_fname, collection_name=spider.name).create()
 
 
 def get_archive_uri_template_variables() -> dict:
