@@ -14,9 +14,9 @@ from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
 
 
-class WaczCrawlMiddleware:
+class BaseWaczMiddleware:
     wacz: Union[WaczFile, MultiWaczFile]
-    
+
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
         wacz_url = settings.get("SW_WACZ_SOURCE_URL", None)
@@ -27,18 +27,15 @@ class WaczCrawlMiddleware:
         self.wacz_urls = re.split(r"\s*,\s*", wacz_url)
         self.crawl = settings.get("SW_WACZ_CRAWL", False)
         self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60)
- 
+
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
         assert crawler.stats
         o = cls(crawler.settings, crawler.stats)
         crawler.signals.connect(o.spider_opened, signals.spider_opened)
         return o
-    
-    def spider_opened(self, spider: Spider) -> None:
-        if not self.crawl:
-            return
 
+    def spider_opened(self, spider: Spider) -> None:
         tp = {"timeout": self.timeout}
         multiple_entries = len(self.wacz_urls) != 1
 
@@ -66,6 +63,14 @@ class WaczCrawlMiddleware:
     
             if wacz_files:
                 self.wacz = MultiWaczFile(wacz_files)
+
+
+class WaczCrawlMiddleware(BaseWaczMiddleware):
+    def spider_opened(self, spider: Spider) -> None:
+        if not self.crawl:
+            return
+
+        super().spider_opened(spider)
 
     def process_start_requests(self, start_requests: Iterable[Request], spider: Spider):
         if not self.crawl or not hasattr(self, 'wacz'):

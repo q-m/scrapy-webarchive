@@ -1,77 +1,21 @@
 import re
-from typing import IO, List, Union
 
-from scrapy import signals
-from scrapy.crawler import Crawler
-from scrapy.exceptions import IgnoreRequest, NotConfigured
+from scrapy.exceptions import IgnoreRequest
 from scrapy.http.request import Request
 from scrapy.http.response import Response
-from scrapy.settings import Settings
 from scrapy.spiders import Spider
-from scrapy.statscollectors import StatsCollector
-from smart_open import open
-from typing_extensions import Self
 
-from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
+from scrapy_webarchive.middleware import BaseWaczMiddleware
 from scrapy_webarchive.warc import record_transformer
 
 
-class WaczMiddleware:
+class WaczMiddleware(BaseWaczMiddleware):
     """
     Scrapy downloader middleware to crawl from a WACZ archive
 
     Loads the index fully into memory, but lazily loads pages.
     This helps to work with large archives, including remote ones.
     """
-    
-    wacz: Union[WaczFile, MultiWaczFile]
-
-    def __init__(self, settings: Settings, stats: StatsCollector) -> None:
-        self.stats = stats
-        wacz_url = settings.get("SW_WACZ_SOURCE_URL", None)
-
-        if not wacz_url:
-            raise NotConfigured
-
-        self.wacz_urls = re.split(r"\s*,\s*", wacz_url)
-        self.crawl = settings.get("SW_WACZ_CRAWL", False)
-        self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60)
-
-    @classmethod
-    def from_crawler(cls, crawler: Crawler) -> Self:
-        assert crawler.stats
-        o = cls(crawler.settings, crawler.stats)
-        crawler.signals.connect(o.spider_opened, signals.spider_opened)
-        return o
-
-    def spider_opened(self, spider: Spider) -> None:
-        tp = {"timeout": self.timeout}
-        multiple_entries = len(self.wacz_urls) != 1
-
-        def open_wacz_file(wacz_url: str) -> Union[IO[bytes], None]:
-            spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
-            
-            try:
-                return open(wacz_url, "rb", transport_params=tp)
-            except OSError:
-                spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_url}")
-                return None
-
-        if not multiple_entries:
-            wacz_url = self.wacz_urls[0]
-            wacz_file = open_wacz_file(wacz_url)
-            if wacz_file:
-                self.wacz = WaczFile(wacz_file)
-        else:
-            wacz_files: List[IO[bytes]] = []
-
-            for wacz_url in self.wacz_urls:
-                wacz_file = open_wacz_file(wacz_url)
-                if wacz_file:
-                    wacz_files.append(wacz_file)
-    
-            if wacz_files:
-                self.wacz = MultiWaczFile(wacz_files)
 
     def process_request(self, request: Request, spider: Spider):
         if not hasattr(self, 'wacz'):
