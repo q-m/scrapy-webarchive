@@ -3,7 +3,7 @@ import io
 import os
 import zipfile
 from collections import defaultdict
-from typing import IO, Generator, List
+from typing import IO, Generator, List, Union
 
 from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
@@ -81,14 +81,14 @@ class WaczFile:
         self.wacz_file = zipfile.ZipFile(file)
         self.index = self._parse_index(self._get_index(self.wacz_file))
 
-    def _find_in_index(self, url: str) -> CdxjRecord | None:
+    def _find_in_index(self, url: str) -> Union[CdxjRecord, None]:
         records = self.index.get(url, [])
 
         # If multiple entries are present, the last one is most likely to be relevant
         return records[-1] if records else None
 
-    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> WARCRecord | None:
-        warc_file: gzip.GzipFile | IO[bytes]
+    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:
+        warc_file: Union[gzip.GzipFile, IO[bytes]]
 
         try:
             warc_file = self.wacz_file.open("archive/" + cdxj_record.data["filename"])
@@ -101,7 +101,7 @@ class WaczFile:
 
         return WARCReader(warc_file).read_record()
 
-    def get_warc_from_url(self, url: str) -> WARCRecord | None:
+    def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
         cdxj_record = self._find_in_index(url)
         return self.get_warc_from_cdxj_record(cdxj_record) if cdxj_record else None
 
@@ -111,7 +111,7 @@ class WaczFile:
                 yield cdxj_record
 
     @staticmethod
-    def _get_index(wacz_file: zipfile.ZipFile) -> gzip.GzipFile | IO[bytes]:
+    def _get_index(wacz_file: zipfile.ZipFile) -> Union[gzip.GzipFile, IO[bytes]]:
         """Opens the index file from the WACZ archive, checking for .cdxj, .cdxj.gz, .cdx. and .cdx.gz"""
 
         index_paths = [
@@ -134,7 +134,7 @@ class WaczFile:
 
         raise FileNotFoundError("No valid index file found.")
 
-    def _parse_index(self, index_file: gzip.GzipFile | IO[bytes]) -> dict[str, List[CdxjRecord]]:
+    def _parse_index(self, index_file: Union[gzip.GzipFile, IO[bytes]]) -> dict[str, List[CdxjRecord]]:
         cdxj_records = defaultdict(list)
 
         for line in index_file:
@@ -155,10 +155,10 @@ class MultiWaczFile:
     def __init__(self, wacz_files: List[IO[bytes]]) -> None:
         self.waczs = [WaczFile(wacz_file) for wacz_file in wacz_files]
 
-    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> WARCRecord | None:
+    def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:
         return cdxj_record.wacz_file.get_warc_from_cdxj_record(cdxj_record) if cdxj_record.wacz_file else None
         
-    def get_warc_from_url(self, url: str) -> WARCRecord | None:
+    def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
         for wacz in self.waczs:
             warc_record = wacz.get_warc_from_url(url)
             if warc_record:

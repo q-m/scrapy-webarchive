@@ -1,5 +1,5 @@
 import re
-from typing import IO, List
+from typing import IO, List, Union
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -15,7 +15,7 @@ from scrapy_webarchive.warc import record_transformer
 
 
 class WaczCrawlMiddleware:
-    wacz: WaczFile | MultiWaczFile
+    wacz: Union[WaczFile, MultiWaczFile]
     
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
@@ -42,7 +42,7 @@ class WaczCrawlMiddleware:
         tp = {"timeout": self.timeout}
         multiple_entries = len(self.wacz_urls) != 1
 
-        def open_wacz_file(wacz_url: str) -> IO[bytes] | None:
+        def open_wacz_file(wacz_url: str) -> Union[IO[bytes], None]:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
             
             try:
