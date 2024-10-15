@@ -8,33 +8,39 @@ from scrapy_webarchive.wacz import WaczFileCreator
 
 
 class TestWaczFileCreator:
+    warc_fname = "example-20241007000000-00000-test.warc"
+    cdxj_fname = "index.cdxj"
+    collection_name = "example"
+
     @pytest.fixture
     def wacz_file_creator(self):
         """Fixture to initialize the WaczFileCreator with a mocked store"""
 
-        store = Mock()
-        warc_fname = "/scrapy-webarchive/quotes-20241007000000-00000-test.warc"
-        cdxj_fname = "/scrapy-webarchive/index.cdxj"
-        return WaczFileCreator(store=store, warc_fname=warc_fname, cdxj_fname=cdxj_fname)
+        return WaczFileCreator(
+            store=Mock(),
+            warc_fname=self.warc_fname,
+            collection_name=self.collection_name,
+            cdxj_fname=self.cdxj_fname,
+        )
 
     @freeze_time("2024-10-04 08:27:11")
     def test_create_wacz(self, fs, wacz_file_creator):
         # Setup the fake filesystem
-        fs.create_file("/scrapy-webarchive/index.cdxj", contents="")
-        fs.create_file("/scrapy-webarchive/quotes-20241007000000-00000-test.warc", contents="")
+        fs.create_file(self.cdxj_fname, contents="")
+        fs.create_file(self.warc_fname, contents="")
 
         wacz_file_creator.create()
 
         # Ensure the files are removed after creation
-        assert not fs.exists("/scrapy-webarchive/index.cdxj")
-        assert not fs.exists("/scrapy-webarchive/quotes-20241007000000-00000-test.warc")
+        assert not fs.exists(self.cdxj_fname)
+        assert not fs.exists(self.warc_fname)
 
         # Verify the WACZ file was persisted in the store
         wacz_fname = wacz_file_creator.get_wacz_fname()
         wacz_file_creator.store.persist_file.assert_called_once()
 
         # Assert that the correct WACZ filename was used
-        assert wacz_fname == "archive-20241004082711.wacz"
+        assert wacz_fname == f"{self.collection_name}-20241004082711.wacz"
 
         # Retrieve the zip buffer from the call args
         call_args = wacz_file_creator.store.persist_file.call_args
@@ -42,5 +48,5 @@ class TestWaczFileCreator:
 
         # Verify that the WACZ zip content is correct
         zip_file = zipfile.ZipFile(zip_buffer)
-        assert "indexes/index.cdxj" in zip_file.namelist()
-        assert "archive/quotes-20241007000000-00000-test.warc" in zip_file.namelist()
+        assert f"indexes/{self.cdxj_fname}" in zip_file.namelist()
+        assert f"archive/{self.warc_fname}" in zip_file.namelist()

@@ -21,10 +21,11 @@ class WARCReader(BaseWARCReader):
 class WaczFileCreator:
     """Handles creating WACZ archives"""
 
-    def __init__(self, store, warc_fname: str, cdxj_fname: str = "index.cdxj") -> None:
+    def __init__(self, store, warc_fname: str, collection_name: str, cdxj_fname: str = "index.cdxj") -> None:
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
+        self.collection_name = collection_name
 
     def create(self) -> None:
         """Create the WACZ file from the WARC and CDXJ index and save it in the configured store"""
@@ -68,7 +69,7 @@ class WaczFileCreator:
     def get_wacz_fname(self) -> str:
         """Generate WACZ filename based on the WARC filename"""
 
-        return f"archive-{get_current_timestamp()}.wacz"
+        return f"{self.collection_name}-{get_current_timestamp()}.wacz"
 
 
 class WaczFile:
