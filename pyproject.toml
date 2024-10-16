@@ -25,6 +25,11 @@ classifiers = [
     "Programming Language :: Python",
 ]
 
+[project.optional-dependencies]
+aws = ["boto3"]
+gcs = ["google-cloud-storage"]
+all = ["boto3", "google-cloud-storage"]
+
 [project.urls]
 Repository = "https://github.com/q-m/scrapy-webarchive"
 

@@ -36,10 +36,10 @@ DOWNLOADER_MIDDLEWARES = {
 }
 ```
 
-Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URL` setting:
+Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
 ```python
-SW_WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz"
+SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 ```
 
 ### Iterating a WACZ archive
@@ -54,9 +54,9 @@ SPIDER_MIDDLEWARES = {
 }
 ```
 
-Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URL` setting:
+Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
 ```python
-SW_WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz"
+SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 SW_WACZ_CRAWL = True
 ```

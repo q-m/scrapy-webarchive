@@ -8,6 +8,7 @@ from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
 from typing_extensions import List, Optional, Tuple
+from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders
@@ -29,6 +30,12 @@ def generate_warc_fname(prefix: str) -> str:
     # As of now we only generate one WARC file. Add serial in here to adhere to the warc specification.
     serial = '00000'
     return "-".join([prefix, get_current_timestamp(), serial, crawlhost]) + ".warc.gz"
+
+
+class WARCReader(BaseWARCReader):
+    """WARC reader with compatibility for WARC version 1.0 and 1.1"""
+
+    SUPPORTED_VERSIONS = ["1.0", "1.1"]
 
 
 class WarcFileWriter:

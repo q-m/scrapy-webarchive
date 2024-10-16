@@ -17,13 +17,13 @@ Supported variables: `year`, `month`, `day` and `timestamp`.
 
 ## Downloader middleware and spider middleware
 
-### `SW_WACZ_SOURCE_URL`
+### `SW_WACZ_SOURCE_URI`
 
 ```python
-SW_WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz"
+SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 
 # Allows multiple sources, comma seperated.
-SW_WACZ_SOURCE_URL = "s3://scrapy-webarchive/archive.wacz,/path/to/archive.wacz"
+SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz,/path/to/archive.wacz"
 ```
 
 This setting defines the location of the WACZ file that should be used as a source for the crawl job.
@@ -42,4 +42,4 @@ Setting to ignore original `start_requests`, just yield all responses found.
 SW_WACZ_TIMEOUT = 60
 ```
 
-Transport parameter for retrieving the `SW_WACZ_SOURCE_URL` from the defined location.
+Transport parameter for retrieving the `SW_WACZ_SOURCE_URI` from the defined location.
