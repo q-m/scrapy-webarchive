@@ -1,6 +1,4 @@
 from datetime import datetime
-from pathlib import Path
-from urllib.parse import urlparse
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -11,7 +9,7 @@ from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S
 from scrapy.settings import Settings
 from typing_extensions import Self
 
-from scrapy_webarchive.utils import get_warc_date
+from scrapy_webarchive.utils import get_scheme_from_uri, get_warc_date
 from scrapy_webarchive.wacz import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -40,13 +38,7 @@ class WaczExporter:
     def _get_store(self):
         archive_uri_template = self.settings["SW_EXPORT_URI"]
         uri = archive_uri_template.format(**get_archive_uri_template_variables())
-    
-        if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
-            scheme = "file"
-        else:
-            scheme = urlparse(uri).scheme
-
-        store_cls = self.STORE_SCHEMES[scheme]
+        store_cls = self.STORE_SCHEMES[get_scheme_from_uri(uri)]
         return store_cls(uri)
 
     @classmethod

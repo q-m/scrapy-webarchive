@@ -7,10 +7,9 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
-from smart_open import open
 from typing_extensions import Iterable, Self
 
-from scrapy_webarchive.wacz import MultiWaczFile, WaczFile
+from scrapy_webarchive.wacz import MultiWaczFile, WaczFile, open_wacz_file
 from scrapy_webarchive.warc import record_transformer
 
 
@@ -19,14 +18,14 @@ class BaseWaczMiddleware:
 
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
         self.stats = stats
-        wacz_url = settings.get("SW_WACZ_SOURCE_URL", None)
+        wacz_uri = settings.get("SW_WACZ_SOURCE_URI", None)
 
-        if not wacz_url:
+        if not wacz_uri:
             raise NotConfigured
 
-        self.wacz_urls = re.split(r"\s*,\s*", wacz_url)
+        self.wacz_uris = re.split(r"\s*,\s*", wacz_uri)
         self.crawl = settings.get("SW_WACZ_CRAWL", False)
-        self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60)
+        self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60.0)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
@@ -36,30 +35,26 @@ class BaseWaczMiddleware:
         return o
 
     def spider_opened(self, spider: Spider) -> None:
-        tp = {"timeout": self.timeout}
-        multiple_entries = len(self.wacz_urls) != 1
-
-        def open_wacz_file(wacz_url: str) -> Union[IO, None]:
-            spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_url}")
-            
-            try:
-                return open(wacz_url, "rb", transport_params=tp)
-            except OSError:
-                spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_url}")
-                return None
+        multiple_entries = len(self.wacz_uris) != 1
 
         if not multiple_entries:
-            wacz_url = self.wacz_urls[0]
-            wacz_file = open_wacz_file(wacz_url)
+            wacz_uri = self.wacz_uris[0]
+            spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_uri}")
+            wacz_file = open_wacz_file(wacz_uri, self.timeout, spider.settings)
             if wacz_file:
                 self.wacz = WaczFile(wacz_file)
+            else:
+                spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
         else:
             wacz_files: List[IO] = []
 
-            for wacz_url in self.wacz_urls:
-                wacz_file = open_wacz_file(wacz_url)
+            for wacz_uri in self.wacz_uris:
+                spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_uri}")
+                wacz_file = open_wacz_file(wacz_uri, self.timeout, spider.settings)
                 if wacz_file:
                     wacz_files.append(wacz_file)
+                else:
+                    spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
     
             if wacz_files:
                 self.wacz = MultiWaczFile(wacz_files)

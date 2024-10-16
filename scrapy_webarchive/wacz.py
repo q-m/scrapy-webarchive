@@ -3,19 +3,22 @@ import io
 import os
 import zipfile
 from collections import defaultdict
+from functools import partial
 from typing import IO, Dict, Generator, List, Union
 
-from warc import WARCReader as BaseWARCReader
+from scrapy.settings import Settings
+from smart_open import open as smart_open
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index
-from scrapy_webarchive.utils import get_current_timestamp
-
-
-class WARCReader(BaseWARCReader):
-    """WARC reader with compatibility for WARC version 1.0 and 1.1"""
-
-    SUPPORTED_VERSIONS = ["1.0", "1.1"]
+from scrapy_webarchive.utils import (
+    add_ftp_credentials,
+    get_current_timestamp,
+    get_gcs_client,
+    get_s3_client,
+    get_scheme_from_uri,
+)
+from scrapy_webarchive.warc import WARCReader
 
 
 class WaczFileCreator:
@@ -172,3 +175,28 @@ class MultiWaczFile:
             for cdxj_record in wacz.iter_index():
                 cdxj_record.wacz_file = wacz
                 yield cdxj_record
+
+
+def open_wacz_file(wacz_uri: str, timeout: float, settings: Settings) -> Union[IO, None]:
+    """Open a WACZ file from a remote location, supporting S3, GCS, and FTP."""
+    
+    tp = {"timeout": timeout}
+    scheme = get_scheme_from_uri(wacz_uri)
+
+    # Map schemes to client creation functions
+    scheme_client_map = {
+        "s3": partial(get_s3_client, settings),
+        "gs": partial(get_gcs_client, settings),
+    }
+
+    # Handle clients for specific schemes using the map
+    if scheme in scheme_client_map:
+        tp["client"] = scheme_client_map[scheme]()
+    elif scheme == "ftp":
+        wacz_uri = add_ftp_credentials(wacz_uri, settings)
+
+    # Try opening the WACZ file
+    try:
+        return smart_open(wacz_uri, "rb", transport_params=tp)
+    except OSError:
+        return None
