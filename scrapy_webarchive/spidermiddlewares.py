@@ -9,6 +9,7 @@ from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
 from typing_extensions import Iterable, Self
 
+from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile, open_wacz_file
 from scrapy_webarchive.warc import record_transformer
 
@@ -67,6 +68,17 @@ class BaseWaczMiddleware:
                 self.wacz = MultiWaczFile(wacz_files)
 
 
+    def _is_off_site(self, url: str, spider: Spider) -> bool:
+        """Check if the URL is off-site based on allowed domains."""
+
+        return hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains
+
+    def _is_disallowed_by_spider(self, url: str, spider: Spider) -> bool:
+        """Check if the URL is disallowed by the spider's archive rules."""
+
+        return hasattr(spider, "archive_disallow_regexp") and not re.search(spider.archive_disallow_regexp, url)
+
+
 class WaczCrawlMiddleware(BaseWaczMiddleware):
     """
     Scrapy WACZ crawl spider middleware to crawl from a WACZ archive.
@@ -82,30 +94,35 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
         super().spider_opened(spider)
 
     def process_start_requests(self, start_requests: Iterable[Request], spider: Spider) -> Iterable[Request]:
-        if not self.crawl or not hasattr(self, 'wacz'):
-            for request in start_requests:
-                yield request
+        """Processes start requests and yields WACZ index entries or original requests based on the crawl setting."""
+        
+        # If crawl is disabled, yield the original start requests.
+        if not self.crawl:
+            yield from start_requests
+            return
+        # If the attribute has not been set, none of the WACZ could be opened.
+        elif not hasattr(self, "wacz"):
+            raise WaczMiddlewareException("Could not open any WACZ files, check your WACZ URIs and authentication.")
 
-        # Ignore original start requests, just yield all responses found
-        else:
-            for entry in self.wacz.iter_index():
-                url = entry.data["url"]
+        # Iterate over entries in the WACZ index.
+        for entry in self.wacz.iter_index():
+            url = entry.data["url"]
 
-                # filter out off-site responses
-                if hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains:
-                    continue
-
-                # only accept allowed responses if requested by spider
-                if hasattr(spider, "archive_regex") and not re.search(spider.archive_regex, url):
-                    continue
-
+            # Filter out off-site requests
+            if self._is_off_site(url, spider):
+                self.stats.inc_value("webarchive/crawl_skip/off_site", spider=spider)
+                flags = ["wacz_start_request", "wacz_crawl_skip"]
+            # Ignore disallowed pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
+            elif self._is_disallowed_by_spider(url, spider):
+                self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=spider)
+                flags = ["wacz_start_request", "wacz_crawl_skip"]
+            else:
                 self.stats.inc_value("webarchive/start_request_count", spider=spider)
+                flags = ["wacz_start_request"]
 
-                # do not filter to allow all occurences to be handled
-                # since we don't yet get all information for the request, this can be necessary
-                yield record_transformer.request_for_record(
-                    entry,
-                    flags=["wacz_start_request"],
-                    meta={"cdxj_record": entry},
-                    dont_filter=True,
-                )
+            yield record_transformer.request_for_record(
+                entry,
+                flags=flags,
+                meta={"cdxj_record": entry},
+                dont_filter=True,
+            )

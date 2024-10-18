@@ -22,7 +22,7 @@ Running a crawl job using these settings will result in a newly created WACZ fil
 
 ## Crawling
 
-There are 2 ways to crawl against a WACZ archive. Choose a strategy that you want to use for your crawl job, and follow the instruction as described below. Using both strategies at the same time is not allowed.
+There are 2 ways to crawl against a WACZ archive. Choose a strategy that you want to use for your crawl job, and follow the instruction as described below.
 
 ### Lookup in a WACZ archive
 
@@ -40,17 +40,22 @@ Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
 ```python
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
+SW_WACZ_CRAWL = True
 ```
 
 ### Iterating a WACZ archive
 
-Going around the default behaviour of the spider, the `WaczCrawlMiddleware` spider middleware will, when enabled, replace the crawl by an iteration through all the entries in the WACZ archive.
+Going around the default behaviour of the spider, the `WaczCrawlMiddleware` spider middleware will, when enabled, replace the crawl by an iteration through all the entries in the WACZ archive index. Then, similar to the previous strategy, it will recreate a response using the data from the archive.
 
-To use the spider middleware, enable it in the settings like so:
+To use this strategy, enable both middlewares in the spider settings like so:
 
 ```python
+DOWNLOADER_MIDDLEWARES = {
+    "scrapy_webarchive.downloadermiddlewares.WaczMiddleware": 543,
+}
+
 SPIDER_MIDDLEWARES = {
-    "scrapy_webarchive.middleware.WaczCrawlMiddleware": 532,
+    "scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware": 543,
 }
 ```
 

@@ -46,11 +46,11 @@ class TestWaczCrawlMiddlewareWarc11:
 
         with self._middleware(SW_WACZ_CRAWL=True) as mw:
             out = list(mw.process_start_requests([], self.spider))
-            assert len(out) == 61
+            assert len([request for request in out if "wacz_crawl_skip" not in request.flags]) == 61
 
     def test_wacz_archive_filters_archive_regex(self):
-        setattr(self.spider, "archive_regex", r"https://quotes\.toscrape\.com/page/\d+/")
+        setattr(self.spider, "archive_disallow_regexp", r"https://quotes\.toscrape\.com/page/\d+/")
 
         with self._middleware(SW_WACZ_CRAWL=True) as mw:
             out = list(mw.process_start_requests([], self.spider))
-            assert len(out) == 9
+            assert len([request for request in out if "wacz_crawl_skip" not in request.flags]) == 9

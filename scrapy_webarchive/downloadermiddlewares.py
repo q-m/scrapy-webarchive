@@ -1,10 +1,10 @@
-import re
 
 from scrapy.exceptions import IgnoreRequest
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.spiders import Spider
 
+from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.spidermiddlewares import BaseWaczMiddleware
 from scrapy_webarchive.warc import record_transformer
 
@@ -18,21 +18,30 @@ class WaczMiddleware(BaseWaczMiddleware):
     """
 
     def process_request(self, request: Request, spider: Spider):
-        if not hasattr(self, 'wacz'):
-            self.stats.set_value("webarchive/no_valid_sources", True, spider=spider)
-            raise IgnoreRequest()
+        # Continue default crawl behaviour
+        if not self.crawl:
+            return None
 
-        # ignore blacklisted pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
-        if hasattr(spider, "archive_blacklist_regexp") and re.search(spider.archive_blacklist_regexp, request.url):
-            self.stats.inc_value("webarchive/request_blacklisted", spider=spider)
-            raise IgnoreRequest()
+        # If the attribute has not been set, none of the WACZ could be opened.
+        if self.crawl and not hasattr(self, 'wacz'):
+            raise WaczMiddlewareException("Could not open any WACZ files, check your WACZ URIs and authentication.")
 
-        # ignore when crawling and flag indicates this request needs to be skipped during wacz crawl
-        if self.crawl and "wacz_crawl_skip" in request.flags:
+        # Ignore when crawling and flag indicates this request needs to be skipped during WACZ crawl
+        if "wacz_crawl_skip" in request.flags:
             self.stats.inc_value("webarchive/crawl_skip", spider=spider)
             raise IgnoreRequest()
 
-        # get record from existing index entry, or else lookup by URL
+        # Filter out off-site requests
+        if self._is_off_site(request.url, spider):
+            self.stats.inc_value("webarchive/crawl_skip/off_site", spider=spider)
+            raise IgnoreRequest()
+    
+        # Ignore disallowed pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
+        if self._is_disallowed_by_spider(request.url, spider):
+            self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=spider)
+            raise IgnoreRequest()
+
+        # Get record from existing index entry, or else lookup by URL
         if request.meta.get("cdxj_record"):
             warc_record = self.wacz.get_warc_from_cdxj_record(cdxj_record=request.meta["cdxj_record"])
         else:
