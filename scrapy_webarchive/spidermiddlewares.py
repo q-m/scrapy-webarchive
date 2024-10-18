@@ -1,5 +1,5 @@
 import re
-from typing import IO, List, Union
+from typing import Union
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -14,6 +14,8 @@ from scrapy_webarchive.warc import record_transformer
 
 
 class BaseWaczMiddleware:
+    """A base class for middlewares that require opening one or more WACZ files."""
+
     wacz: Union[WaczFile, MultiWaczFile]
 
     def __init__(self, settings: Settings, stats: StatsCollector) -> None:
@@ -35,39 +37,51 @@ class BaseWaczMiddleware:
         return o
 
     def spider_opened(self, spider: Spider) -> None:
-        multiple_entries = len(self.wacz_uris) != 1
+        """
+        Handles the initialization of WACZ files when the spider is opened.
 
-        if not multiple_entries:
-            wacz_uri = self.wacz_uris[0]
+        This method is called when the Scrapy spider starts, and it attempts to open WACZ files 
+        defined in the spider's configuration. It processes multiple WACZ URIs provided in `self.wacz_uris`, logs the 
+        process, and collects valid WACZ files for further use.
+
+        If only one WACZ URI is provided, it opens and assigns the file to `self.wacz` as a `WaczFile` instance. 
+        If multiple URIs are provided, valid files are grouped and assigned to `self.wacz` as a `MultiWaczFile` instance. 
+        """
+
+        spider.logger.info(f"[WACZDownloader] Found {len(self.wacz_uris)} WACZ URI(s) to open")
+        wacz_files = []
+        
+        for wacz_uri in self.wacz_uris:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_uri}")
             wacz_file = open_wacz_file(wacz_uri, self.timeout, spider.settings)
             if wacz_file:
-                self.wacz = WaczFile(wacz_file)
+                wacz_files.append(wacz_file)
             else:
                 spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
-        else:
-            wacz_files: List[IO] = []
 
-            for wacz_uri in self.wacz_uris:
-                spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_uri}")
-                wacz_file = open_wacz_file(wacz_uri, self.timeout, spider.settings)
-                if wacz_file:
-                    wacz_files.append(wacz_file)
-                else:
-                    spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
-    
-            if wacz_files:
+        if wacz_files:
+            spider.logger.info(f"[WACZDownloader] Continuing with {len(wacz_files)}/{len(self.wacz_uris)} valid WACZ files")
+            if len(wacz_files) == 1:
+                self.wacz = WaczFile(wacz_files[0])
+            else:
                 self.wacz = MultiWaczFile(wacz_files)
 
 
 class WaczCrawlMiddleware(BaseWaczMiddleware):
+    """
+    Scrapy WACZ crawl spider middleware to crawl from a WACZ archive.
+
+    Replaces the default behaviour of the spider by solely iterating over the
+    entries in the WACZ file.
+    """
+
     def spider_opened(self, spider: Spider) -> None:
         if not self.crawl:
             return
 
         super().spider_opened(spider)
 
-    def process_start_requests(self, start_requests: Iterable[Request], spider: Spider):
+    def process_start_requests(self, start_requests: Iterable[Request], spider: Spider) -> Iterable[Request]:
         if not self.crawl or not hasattr(self, 'wacz'):
             for request in start_requests:
                 yield request
@@ -85,7 +99,7 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
                 if hasattr(spider, "archive_regex") and not re.search(spider.archive_regex, url):
                     continue
 
-                self.stats.inc_value("wacz/start_request_count", spider=spider)
+                self.stats.inc_value("webarchive/start_request_count", spider=spider)
 
                 # do not filter to allow all occurences to be handled
                 # since we don't yet get all information for the request, this can be necessary
