@@ -4,7 +4,7 @@ from scrapy.http.request import Request
 from scrapy.settings import Settings
 from scrapy.utils.test import get_crawler
 
-from scrapy_webarchive.middleware import WaczCrawlMiddleware
+from scrapy_webarchive.spidermiddlewares import WaczCrawlMiddleware
 
 from . import get_test_data_path
 

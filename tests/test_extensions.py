@@ -59,5 +59,5 @@ class TestWaczExporterExtension:
         extension.writer.write_request.assert_called_once()
 
         # Verify that the stats were incremented correctly
-        assert extension.stats._stats['wacz/exporter/response_written'] == 1
-        assert extension.stats._stats['wacz/exporter/request_written'] == 1
+        assert extension.stats._stats['webarchive/exporter/response_written'] == 1
+        assert extension.stats._stats['webarchive/exporter/request_written'] == 1

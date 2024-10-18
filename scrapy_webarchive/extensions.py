@@ -57,6 +57,11 @@ class WaczExporter:
     
     @classmethod
     def from_settings(cls, settings: Settings, crawler: Crawler):
+        """
+        Store configuration is based on the images/files pipeline from Scrapy. See:
+        https://github.com/scrapy/scrapy/blob/d4709e41047e794c9e39968f61c5abbcddf825c4/scrapy/pipelines/images.py#L94-L116
+        """
+
         s3store = cls.STORE_SCHEMES["s3"]
         s3store.AWS_ACCESS_KEY_ID = settings["AWS_ACCESS_KEY_ID"]
         s3store.AWS_SECRET_ACCESS_KEY = settings["AWS_SECRET_ACCESS_KEY"]
@@ -86,15 +91,15 @@ class WaczExporter:
 
         # Write response WARC record
         record = self.writer.write_response(response, request)
-        self.stats.inc_value("wacz/exporter/response_written", spider=spider)
+        self.stats.inc_value("webarchive/exporter/response_written", spider=spider)
         self.stats.inc_value(
-            f"wacz/exporter/writer_status_count/{record.http_headers.get_statuscode()}", 
+            f"webarchive/exporter/writer_status_count/{record.http_headers.get_statuscode()}", 
             spider=spider,
         )
 
         # Write request WARC record
         self.writer.write_request(request, concurrent_to=record)
-        self.stats.inc_value("wacz/exporter/request_written", spider=spider)
+        self.stats.inc_value("webarchive/exporter/request_written", spider=spider)
 
     def spider_closed(self, spider: Spider) -> None:
         WaczFileCreator(store=self.store, warc_fname=self.writer.warc_fname, collection_name=spider.name).create()
