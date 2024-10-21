@@ -6,7 +6,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: release
+    environment: release-test
 
     permissions:
       id-token: write
