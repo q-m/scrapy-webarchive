@@ -32,12 +32,15 @@ class WaczExporter:
         if not self.settings["SW_EXPORT_URI"]:
             raise NotConfigured
 
-        self.store = self._get_store()
+        self.store = self._get_store(spider_name=crawler.spider.name)
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
 
-    def _get_store(self):
+    def _get_store(self, spider_name: str):
         archive_uri_template = self.settings["SW_EXPORT_URI"]
-        uri = archive_uri_template.format(**get_archive_uri_template_variables())
+        uri = archive_uri_template.format(**{
+            "spider": spider_name,
+            **get_archive_uri_template_dt_variables(),
+        })
         store_cls = self.STORE_SCHEMES[get_scheme_from_uri(uri)]
         return store_cls(uri)
 
@@ -105,7 +108,7 @@ class WaczExporter:
         WaczFileCreator(store=self.store, warc_fname=self.writer.warc_fname, collection_name=spider.name).create()
 
 
-def get_archive_uri_template_variables() -> dict:
+def get_archive_uri_template_dt_variables() -> dict:
     current_date = datetime.now()
 
     return {
