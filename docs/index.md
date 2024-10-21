@@ -11,3 +11,7 @@
 - WACZ supports saving images but this module does not yet integrate with Scrapy's image/file pipeline for retrieving images/files from the WACZ. Future support for this feature is planned.
 
 **Source Code**: <a href="https://github.com/q-m/scrapy-webarchive" target="_blank">https://github.com/q-m/scrapy-webarchive</a>
+
+## Credits
+
+This package started as a fork of https://github.com/internetarchive/scrapy-warcio. The idea of turning its functionality into an extension as well as actually writing the WARC files is based on it.
