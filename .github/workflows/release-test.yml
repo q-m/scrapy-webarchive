@@ -1,9 +1,7 @@
-name: Release
+name: Release to test PyPI
 
 on:
-  release:
-    types:
-      - created
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -28,3 +26,5 @@ jobs:
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@v1.10.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
