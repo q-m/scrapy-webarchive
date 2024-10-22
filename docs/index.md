@@ -1,5 +1,7 @@
 # Scrapy Webarchive
 
+[![Docs](https://github.com/q-m/scrapy-webarchive/actions/workflows/docs.yml/badge.svg)](https://github.com/q-m/scrapy-webarchive/actions/workflows/docs.yml)
+
 `scrapy-webarchive` is a plugin for Scrapy that allows users to capture and export web archives in the WARC and WACZ formats during crawling.
 
 ## Features
