@@ -100,3 +100,4 @@ jobs:
             tox
         env:
           TOXENV: ${{ matrix.toxenv }}
+        continue-on-error: ${{ contains(matrix.toxenv, '-scrapymaster') }}
