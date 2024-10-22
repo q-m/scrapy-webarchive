@@ -14,7 +14,7 @@ from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
 from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
 
-from scrapy_webarchive.utils import get_scheme_from_uri, get_warc_date
+from scrapy_webarchive.utils import WARC_DT_FORMAT, get_formatted_dt_string, get_scheme_from_uri
 from scrapy_webarchive.wacz import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -112,7 +112,7 @@ class WaczExporter:
         self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
 
     def response_received(self, response: Response, request: Request, spider: Spider) -> None:
-        request.meta["WARC-Date"] = get_warc_date()
+        request.meta["WARC-Date"] = get_formatted_dt_string(format=WARC_DT_FORMAT)
 
         # Write response WARC record
         record = self.writer.write_response(response, request)

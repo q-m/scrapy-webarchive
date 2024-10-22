@@ -1,21 +1,20 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import IO
 from urllib.parse import urlparse, urlunparse
 
 from scrapy.settings import Settings
 
 WARC_DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 TIMESTAMP_DT_FORMAT = "%Y%m%d%H%M%S"
+BUFF_SIZE = 1024 * 64
 
 
-def get_current_timestamp() -> str:
-    return datetime.now(timezone.utc).strftime(TIMESTAMP_DT_FORMAT)
-
-
-def get_warc_date() -> str:
-    return datetime.now(timezone.utc).strftime(WARC_DT_FORMAT)
+def get_formatted_dt_string(format: str) -> str:
+    return datetime.now(timezone.utc).strftime(format)
 
 
 def header_lines_to_dict(lines):
@@ -78,3 +77,23 @@ def add_ftp_credentials(wacz_uri: str, settings: Settings) -> str:
         return urlunparse(updated_uri)
     
     return wacz_uri
+
+
+def hash_stream(hash_type: str, stream: IO):
+    """Hashes the stream with given hash_type hasher"""
+
+    try:
+        hasher = hashlib.new(hash_type)
+    except (ImportError, ValueError):
+        return 0, ""
+
+    size = 0
+
+    while True:
+        buff = stream.read(BUFF_SIZE)
+        size += len(buff)
+        hasher.update(buff)
+        if not buff:
+            break
+
+    return size, hash_type + ":" + hasher.hexdigest()
