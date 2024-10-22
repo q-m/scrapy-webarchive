@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import re
-from typing import Union
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -7,7 +8,7 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
-from typing_extensions import Iterable, Self
+from typing_extensions import Iterable, Self, Union
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.wacz import MultiWaczFile, WaczFile, open_wacz_file

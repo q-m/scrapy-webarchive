@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import json
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List
 
 from cdxj_indexer.main import CDXJIndexer
+from typing_extensions import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from scrapy_webarchive.wacz import WaczFile

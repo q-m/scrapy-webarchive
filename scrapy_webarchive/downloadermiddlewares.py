@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from scrapy.exceptions import IgnoreRequest
 from scrapy.http.request import Request

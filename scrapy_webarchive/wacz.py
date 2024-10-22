@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import gzip
 import io
 import os
 import zipfile
 from collections import defaultdict
 from functools import partial
-from typing import IO, TYPE_CHECKING, Dict, Generator, List, Union
 
 from scrapy.settings import Settings
 from smart_open import open as smart_open
+from typing_extensions import IO, TYPE_CHECKING, Dict, Generator, List, Union
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index

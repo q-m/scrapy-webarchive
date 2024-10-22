@@ -4,3 +4,4 @@ freezegun==1.5.1
 mypy==1.11.2
 ruff==0.6.8
 pyfakefs==5.6.0
+tox==4.23.1
