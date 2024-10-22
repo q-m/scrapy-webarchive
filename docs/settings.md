@@ -8,12 +8,13 @@
 
 ```python
 SW_EXPORT_URI = "s3://scrapy-webarchive/"
+SW_EXPORT_URI = "s3://scrapy-webarchive/{spider}/"
 SW_EXPORT_URI = "s3://scrapy-webarchive/{year}/{month}/{day}/{spider}/"
 ```
 
 This is the output path of the WACZ file. Multiple variables can be added that allow dynamic generation of the output path. 
 
-Supported variables: `year`, `month`, `day` and `timestamp`.
+Supported variables: `spider`, `year`, `month`, `day` and `timestamp`.
 
 ## Downloader middleware and spider middleware
 
