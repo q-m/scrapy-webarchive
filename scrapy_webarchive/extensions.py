@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, Protocol, Type, Union, cast
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -11,7 +12,7 @@ from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S
 from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
-from typing_extensions import Self
+from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
 
 from scrapy_webarchive.utils import get_scheme_from_uri, get_warc_date
 from scrapy_webarchive.wacz import WaczFileCreator

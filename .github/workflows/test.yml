@@ -15,33 +15,64 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.8"
+
       - name: Install Dependencies
         run: pip install -r requirements-tests.txt
+
       - name: Ruff
         run: ruff check scrapy_webarchive tests
+
       - name: Mypy
         run: mypy scrapy_webarchive
 
   test:
+    name: unittests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        toxenv:
+          - py37-scrapy29
+          - py312-scrapy29
+          - py38-scrapy210
+          - py312-scrapy210
+          - py38-scrapy211
+          - py312-scrapy211
+          - py312-scrapymaster
+        include:
+          - toxenv: py37-scrapy29
+            python-version: 3.7 
+          - toxenv: py312-scrapy29
+            python-version: '3.12'
+
+          - toxenv: py38-scrapy210
+            python-version: 3.8 
+          - toxenv: py312-scrapy210
+            python-version: '3.12'
+
+          - toxenv: py38-scrapy211
+            python-version: 3.8 
+          - toxenv: py312-scrapy211
+            python-version: '3.12'
+
+          - toxenv: py312-scrapymaster
+            python-version: '3.12'
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Dependencies
-        run: pip install -r requirements-tests.txt
-      - name: Test
-        run: coverage run -m pytest tests
-      - run: coverage report
-      - run: coverage html --title "Coverage for ${{ github.sha }}"
-      - name: Store coverage HTML
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-data-${{ github.job }}-${{ strategy.job-index }}
-          path: .coverage.*
-          include-hidden-files: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Run tox
+        run: |
+            tox
+        env:
+          TOXENV: ${{ matrix.toxenv }}
+        continue-on-error: ${{ contains(matrix.toxenv, '-scrapymaster') }}
