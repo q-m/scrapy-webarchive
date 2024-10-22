@@ -44,7 +44,7 @@ class TestWaczFileCreator:
 
         # Retrieve the zip buffer from the call args
         call_args = wacz_file_creator.store.persist_file.call_args
-        zip_buffer = call_args[0][1]
+        zip_buffer = call_args.kwargs['buf']
 
         # Verify that the WACZ zip content is correct
         zip_file = zipfile.ZipFile(zip_buffer)

@@ -1,9 +1,12 @@
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import TYPE_CHECKING, List
 
 from cdxj_indexer.main import CDXJIndexer
+
+if TYPE_CHECKING:
+    from scrapy_webarchive.wacz import WaczFile
 
 CDXREC = re.compile(
     r"^(?P<surt>(?P<host>[^\)\s]+)\)(?P<path>[^\?\s]+)?(\?(?P<query>\S+))?)"
@@ -14,7 +17,9 @@ CDXREC = re.compile(
 
 @dataclass
 class CdxjRecord:
-    wacz_file: Any
+    """Represents a CDXJ record, which contains metadata about archived web content stored in WARC files."""
+
+    wacz_file: "WaczFile"
     surt: str
     host: str
     path: str = ""
@@ -30,10 +35,14 @@ class CdxjRecord:
 
     @staticmethod
     def _parse(line: str):
+        """Parses a single line from a CDXJ index."""
+
         return CDXREC.match(line)
 
     @classmethod
-    def from_cdxline(cls, cdxline: str, wacz_file):
+    def from_cdxline(cls, cdxline: str, wacz_file: "WaczFile"):
+        """Creates a CdxjRecord instance from a CDX(J) line."""
+
         m = cls._parse(cdxline.strip())
 
         if not m:
@@ -49,6 +58,8 @@ class CdxjRecord:
 
 
 def write_cdxj_index(output: str, inputs: List[str]) -> str:
+    """Generates a CDXJ index from a list of input WARC files and writes the index to an output file."""
+
     wacz_indexer = CDXJIndexer(output=output, inputs=inputs)
     wacz_indexer.process_all()
     return output

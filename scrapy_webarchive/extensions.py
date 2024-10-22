@@ -1,4 +1,6 @@
 from datetime import datetime
+from io import BytesIO
+from typing import Any, Dict, Protocol, Type, Union, cast
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -6,7 +8,9 @@ from scrapy.exceptions import NotConfigured
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S3FilesStore
+from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
+from twisted.internet.defer import Deferred
 from typing_extensions import Self
 
 from scrapy_webarchive.utils import get_scheme_from_uri, get_warc_date
@@ -14,10 +18,27 @@ from scrapy_webarchive.wacz import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
 
-class WaczExporter:
-    """WACZ exporter extension that writes spider requests/responses as WACZ during a crawl job."""
+class FilesStoreProtocol(Protocol):
+    # This protocol will be introduced by Scrapy at a later stage. Once that happens we can drop this bit.
+    # For now we implement it ourselves to improve type hints for the stores.
+    def __init__(self, basedir: str): 
+        ...
 
-    STORE_SCHEMES = {
+    def persist_file(
+        self,
+        path: str,
+        buf: BytesIO,
+        info: MediaPipeline.SpiderInfo,
+        meta: Union[Dict[str, Any], None] = None,
+        headers: Union[Dict[str, str], None] = None,
+    ) -> Union[Deferred[Any], None]: 
+        ...
+
+
+class WaczExporter:
+    """WACZ exporter extension that writes spider requests/responses as WARC and later compiles them to a WACZ."""
+
+    STORE_SCHEMES: Dict[str, Type[FilesStoreProtocol]] = {
         "": FSFilesStore,
         "file": FSFilesStore,
         "s3": S3FilesStore,
@@ -32,10 +53,10 @@ class WaczExporter:
         if not self.settings["SW_EXPORT_URI"]:
             raise NotConfigured
 
-        self.store = self._get_store(spider_name=crawler.spider.name)
+        self.store: FilesStoreProtocol = self._get_store(spider_name=crawler.spider.name)
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
 
-    def _get_store(self, spider_name: str):
+    def _get_store(self, spider_name: str) -> FilesStoreProtocol:
         archive_uri_template = self.settings["SW_EXPORT_URI"]
         uri = archive_uri_template.format(**{
             "spider": spider_name,
@@ -65,7 +86,7 @@ class WaczExporter:
         https://github.com/scrapy/scrapy/blob/d4709e41047e794c9e39968f61c5abbcddf825c4/scrapy/pipelines/images.py#L94-L116
         """
 
-        s3store = cls.STORE_SCHEMES["s3"]
+        s3store: Type[S3FilesStore] = cast(Type[S3FilesStore], cls.STORE_SCHEMES["s3"])
         s3store.AWS_ACCESS_KEY_ID = settings["AWS_ACCESS_KEY_ID"]
         s3store.AWS_SECRET_ACCESS_KEY = settings["AWS_SECRET_ACCESS_KEY"]
         s3store.AWS_SESSION_TOKEN = settings["AWS_SESSION_TOKEN"]
@@ -75,11 +96,11 @@ class WaczExporter:
         s3store.AWS_VERIFY = settings["AWS_VERIFY"]
         s3store.POLICY = settings["FILES_STORE_S3_ACL"]
 
-        gcs_store = cls.STORE_SCHEMES["gs"]
+        gcs_store: Type[GCSFilesStore] = cast(Type[GCSFilesStore], cls.STORE_SCHEMES["gs"])
         gcs_store.GCS_PROJECT_ID = settings["GCS_PROJECT_ID"]
         gcs_store.POLICY = settings["FILES_STORE_GCS_ACL"] or None
 
-        ftp_store = cls.STORE_SCHEMES["ftp"]
+        ftp_store: Type[FTPFilesStore] = cast(Type[FTPFilesStore], cls.STORE_SCHEMES["ftp"])
         ftp_store.FTP_USERNAME = settings["FTP_USER"]
         ftp_store.FTP_PASSWORD = settings["FTP_PASSWORD"]
         ftp_store.USE_ACTIVE_MODE = settings.getbool("FEED_STORAGE_FTP_ACTIVE")

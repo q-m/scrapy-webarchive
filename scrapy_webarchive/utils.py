@@ -17,7 +17,7 @@ def get_warc_date() -> str:
 
 
 def header_lines_to_dict(lines):
-    # XXX only supports each header appearing once, not multiple occurences
+    # TODO: Only supports each header appearing once, not multiple occurences.
     headers = {}
     for line in lines:
         k, v = line.split(b":", 1)
@@ -27,7 +27,7 @@ def header_lines_to_dict(lines):
 
 
 def get_scheme_from_uri(uri: str) -> str:
-    if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir
+    if Path(uri).is_absolute():  # to support win32 paths like: C:\\some\dir.
         return "file"
     else:
         return urlparse(uri).scheme
@@ -63,15 +63,15 @@ def add_ftp_credentials(wacz_uri: str, settings: Settings) -> str:
     parsed_uri = urlparse(wacz_uri)
 
     if parsed_uri.username is None:
-        # Build netloc with credentials
+        # Build netloc with credentials.
         credentials = f'{settings["FTP_USER"]}:{settings["FTP_PASSWORD"]}'
         netloc = f'{credentials}@{parsed_uri.hostname}'
         
-        # Add port if present
+        # Add port if present.
         if parsed_uri.port:
             netloc += f":{parsed_uri.port}"
         
-        # Update and return the URI with credentials
+        # Update and return the URI with credentials.
         updated_uri = parsed_uri._replace(netloc=netloc)
         return urlunparse(updated_uri)
     

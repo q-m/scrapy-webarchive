@@ -33,13 +33,13 @@ def generate_warc_fname(prefix: str) -> str:
 
 
 class WARCReader(BaseWARCReader):
-    """WARC reader with compatibility for WARC version 1.0 and 1.1"""
+    """WARC reader with compatibility for WARC version 1.0 and 1.1."""
 
     SUPPORTED_VERSIONS = ["1.0", "1.1"]
 
 
 class WarcFileWriter:
-    """Handles writing WARC files"""
+    """Handles writing WARC files."""
 
     def __init__(self, collection_name: str, warc_fname: Optional[str] = None) -> None:
         self.collection_name = collection_name
@@ -55,7 +55,7 @@ class WarcFileWriter:
         content: str, 
         http_line: str,
     ) -> ArcWarcRecord:
-        """Write any WARC record (response or request) to a WARC file"""
+        """Write any WARC record (response or request) to a WARC file."""
 
         with open(self.warc_fname, "ab") as fh:
             writer = WARCWriter(fh, gzip=True)
@@ -75,6 +75,8 @@ class WarcFileWriter:
         return record
 
     def write_response(self, response: Response, request: Request) -> ArcWarcRecord:
+        """Write a WARC-Type: response record."""
+
         record_id = self.__record_id()
         warc_headers = StatusAndHeaders(
             "",
@@ -106,7 +108,7 @@ class WarcFileWriter:
         return record
 
     def write_request(self, request: Request, concurrent_to: ArcWarcRecord):
-        """Write a WARC-Type: request record"""
+        """Write a WARC-Type: request record."""
 
         record_id = self.__record_id()
         warc_headers = StatusAndHeaders(
@@ -140,7 +142,7 @@ class WarcFileWriter:
         return record
 
     def write_warcinfo(self, robotstxt_obey: bool) -> None:
-        """Write WARC-Type: warcinfo record"""
+        """Write WARC-Type: warcinfo record."""
 
         content = {
             "software": f"Scrapy/{scrapy_version} (+https://scrapy.org)",
@@ -157,22 +159,25 @@ class WarcFileWriter:
 
     @staticmethod
     def __record_id() -> str:
-        """Returns WARC-Record-ID (globally unique UUID) as a string"""
+        """Returns WARC-Record-ID (globally unique UUID) as a string."""
+
         return f"<urn:uuid:{uuid.uuid1()}>"
 
 
 class WarcRecordTransformer:
-    """
-    A helper class to convert WARC records into Scrapy requests and responses.
-    """
+    """A helper class to convert WARC records into Scrapy requests and responses."""
     
     response_types = ResponseTypes()
 
     def request_for_record(self, cdxj_record: CdxjRecord, **kwargs):
+        """Create a Scrapy request instance from a WARCRecord."""
+
         # TODO: locate request in WACZ and include all relevant things (like headers)
         return Request(url=cdxj_record.data["url"], method=cdxj_record.data.get("method", "GET"), **kwargs)
 
     def response_for_record(self, warc_record: WARCRecord, **kwargs):
+        """Create a Scrapy response instance from a WARCRecord."""
+
         # We expect a response.
         # https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-type-mandatory
         if warc_record.type != "response":

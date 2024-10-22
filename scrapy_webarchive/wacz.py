@@ -4,7 +4,7 @@ import os
 import zipfile
 from collections import defaultdict
 from functools import partial
-from typing import IO, Dict, Generator, List, Union
+from typing import IO, TYPE_CHECKING, Dict, Generator, List, Union
 
 from scrapy.settings import Settings
 from smart_open import open as smart_open
@@ -20,18 +20,21 @@ from scrapy_webarchive.utils import (
 )
 from scrapy_webarchive.warc import WARCReader
 
+if TYPE_CHECKING:
+    from scrapy_webarchive.extensions import FilesStoreProtocol
+
 
 class WaczFileCreator:
-    """Handles creating WACZ archives"""
+    """Handles creating WACZ archives."""
 
-    def __init__(self, store, warc_fname: str, collection_name: str, cdxj_fname: str = "index.cdxj") -> None:
+    def __init__(self, store: 'FilesStoreProtocol', warc_fname: str, collection_name: str, cdxj_fname: str = "index.cdxj") -> None:
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
         self.collection_name = collection_name
 
     def create(self) -> None:
-        """Create the WACZ file from the WARC and CDXJ index and save it in the configured store"""
+        """Create the WACZ file from the WARC and CDXJ index and save it in the configured store."""
 
         # Write cdxj index to a temporary file
         write_cdxj_index(output=self.cdxj_fname, inputs=[self.warc_fname])
@@ -44,10 +47,10 @@ class WaczFileCreator:
 
         # Save WACZ to the storage
         zip_buffer.seek(0)
-        self.store.persist_file(self.get_wacz_fname(), zip_buffer, info=None)
+        self.store.persist_file(path=self.get_wacz_fname(), buf=zip_buffer, info=None)
 
     def create_wacz_zip(self) -> io.BytesIO:
-        """Create the WACZ zip file and return the in-memory buffer"""
+        """Create the WACZ zip file and return the in-memory buffer."""
 
         zip_buffer = io.BytesIO()
 
@@ -58,26 +61,26 @@ class WaczFileCreator:
         return zip_buffer
 
     def write_to_zip(self, zip_file: zipfile.ZipFile, filename: str, destination: str) -> None:
-        """Helper function to write a file into the ZIP archive"""
+        """Helper function to write a file into the ZIP archive."""
 
         with open(filename, "rb") as file_handle:
             zip_file.writestr(destination + os.path.basename(filename), file_handle.read())
 
     def cleanup_files(self, *files: str) -> None:
-        """Remove files from the filesystem"""
+        """Remove files from the filesystem."""
 
         for file in files:
             os.remove(file)
 
     def get_wacz_fname(self) -> str:
-        """Generate WACZ filename based on the WARC filename"""
+        """Generate WACZ filename based on the WARC filename."""
 
         return f"{self.collection_name}-{get_current_timestamp()}.wacz"
 
 
 class WaczFile:
     """
-    Handles looking up pages in the index, and iterating over all pages in the index.
+    Handles looking up pages in the WACZ's index, and iterating over all pages in the index.
     Can also iterate over all entries in each WARC embedded in the archive.
     """
 
@@ -86,12 +89,16 @@ class WaczFile:
         self.index = self._parse_index(self._get_index(self.wacz_file))
 
     def _find_in_index(self, url: str) -> Union[CdxjRecord, None]:
+        """Looks for the most relevant CDXJ record for a given URL in the index."""
+
         records = self.index.get(url, [])
 
         # If multiple entries are present, the last one is most likely to be relevant
         return records[-1] if records else None
 
     def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:
+        """Retrieves a WARC record from the WACZ archive using a CDXJ record."""
+
         warc_file: Union[gzip.GzipFile, IO]
 
         try:
@@ -106,10 +113,14 @@ class WaczFile:
         return WARCReader(warc_file).read_record()
 
     def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
+        """Retrieves a WARC record from the WACZ archive by searching for the URL in the index."""
+
         cdxj_record = self._find_in_index(url)
         return self.get_warc_from_cdxj_record(cdxj_record) if cdxj_record else None
 
     def iter_index(self) -> Generator[CdxjRecord, None, None]:
+        """Iterates over all CDXJ records in the WACZ index."""
+
         for cdxj_records in self.index.values():
             for cdxj_record in cdxj_records:
                 yield cdxj_record
@@ -136,7 +147,7 @@ class WaczFile:
                 # Try the next file if this one is not found
                 continue
 
-        raise FileNotFoundError("No valid index file found.")
+        raise FileNotFoundError(f"No valid index file found in WACZ file: {wacz_file.filename}")
 
     def _parse_index(self, index_file: Union[gzip.GzipFile, IO]) -> Dict[str, List[CdxjRecord]]:
         cdxj_records = defaultdict(list)
@@ -149,32 +160,33 @@ class WaczFile:
 
 
 class MultiWaczFile:
-    """
-    The MultiWACZ file format is not yet finalized, hence instead of pointing to a
-    MultiWACZ file, this just works with the multiple WACZ files.
-
-    Supports the same things as WACZFile, but handles multiple WACZ files underneath.
-    """
+    """Supports the same things as WaczFile, but handles multiple WACZ files underneath."""
 
     def __init__(self, wacz_files: List[IO]) -> None:
         self.waczs = [WaczFile(wacz_file) for wacz_file in wacz_files]
 
     def get_warc_from_cdxj_record(self, cdxj_record: CdxjRecord) -> Union[WARCRecord, None]:
+        """Retrieves a WARC record from the WACZ file corresponding to the given `CdxjRecord`."""
+
         return cdxj_record.wacz_file.get_warc_from_cdxj_record(cdxj_record) if cdxj_record.wacz_file else None
         
     def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
+        """Searches through all WACZ files to find a WARC record that matches the provided URL."""
+
         for wacz in self.waczs:
             warc_record = wacz.get_warc_from_url(url)
             if warc_record:
                 return warc_record
-            
+
         return None
 
     def iter_index(self) -> Generator[CdxjRecord, None, None]:
-        for wacz in self.waczs:
-            for cdxj_record in wacz.iter_index():
-                cdxj_record.wacz_file = wacz
-                yield cdxj_record
+        """
+        Iterates over the index entries in all WACZ files, yielding `CdxjRecord` objects. Each yielded 
+        record has its `wacz_file` attribute set to the corresponding WACZ file.
+        """
+
+        yield from (cdxj_record for wacz in self.waczs for cdxj_record in wacz.iter_index())
 
 
 def open_wacz_file(wacz_uri: str, timeout: float, settings: Settings) -> Union[IO, None]:

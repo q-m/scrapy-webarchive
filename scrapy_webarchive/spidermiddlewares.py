@@ -67,6 +67,9 @@ class BaseWaczMiddleware:
             else:
                 self.wacz = MultiWaczFile(wacz_files)
 
+        # If there are not wacz_files, we raise a `WaczMiddlewareException` in the downloader/spider middleware.
+        # Raising an exception here does not stop the job from running. If there are no valid WACZ files configured
+        # we do not want to continue the job.
 
     def _is_off_site(self, url: str, spider: Spider) -> bool:
         """Check if the URL is off-site based on allowed domains."""
