@@ -15,70 +15,28 @@ jobs:
       matrix:
         toxenv:
           - py37-scrapy29
-          - py38-scrapy29
-          - py39-scrapy29
-          - py310-scrapy29
-          - py311-scrapy29
           - py312-scrapy29
-
           - py38-scrapy210
-          - py39-scrapy210
-          - py310-scrapy210
-          - py311-scrapy210
           - py312-scrapy210
-
           - py38-scrapy211
-          - py39-scrapy211
-          - py310-scrapy211
-          - py311-scrapy211
           - py312-scrapy211
-
-          - py39-scrapymaster
-          - py310-scrapymaster
-          - py311-scrapymaster
           - py312-scrapymaster
         include:
           - toxenv: py37-scrapy29
             python-version: 3.7 
-          - toxenv: py38-scrapy29
-            python-version: 3.8 
-          - toxenv: py39-scrapy29
-            python-version: 3.9 
-          - toxenv: py310-scrapy29
-            python-version: '3.10' 
-          - toxenv: py311-scrapy29
-            python-version: '3.11'
           - toxenv: py312-scrapy29
             python-version: '3.12'
 
           - toxenv: py38-scrapy210
             python-version: 3.8 
-          - toxenv: py39-scrapy210
-            python-version: 3.9 
-          - toxenv: py310-scrapy210
-            python-version: '3.10'
-          - toxenv: py311-scrapy210
-            python-version: '3.11'
           - toxenv: py312-scrapy210
             python-version: '3.12'
 
           - toxenv: py38-scrapy211
             python-version: 3.8 
-          - toxenv: py39-scrapy211
-            python-version: 3.9 
-          - toxenv: py310-scrapy211
-            python-version: '3.10'
-          - toxenv: py311-scrapy211
-            python-version: '3.11'
           - toxenv: py312-scrapy211
             python-version: '3.12'
 
-          - toxenv: py39-scrapymaster
-            python-version: 3.9 
-          - toxenv: py310-scrapymaster
-            python-version: '3.10'
-          - toxenv: py311-scrapymaster
-            python-version: '3.11'
           - toxenv: py312-scrapymaster
             python-version: '3.12'
 
