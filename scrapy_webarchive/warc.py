@@ -18,7 +18,7 @@ from warcio.warcwriter import WARCWriter
 
 from scrapy_webarchive.cdxj import CdxjRecord
 from scrapy_webarchive.exceptions import WaczMiddlewareException
-from scrapy_webarchive.utils import get_current_timestamp, header_lines_to_dict
+from scrapy_webarchive.utils import TIMESTAMP_DT_FORMAT, get_formatted_dt_string, header_lines_to_dict
 
 
 def generate_warc_fname(prefix: str) -> str:
@@ -28,10 +28,12 @@ def generate_warc_fname(prefix: str) -> str:
     {prefix}-{timestamp}-{serial}-{crawlhost}.warc.gz
     """
 
+    timestamp = get_formatted_dt_string(format=TIMESTAMP_DT_FORMAT)
     crawlhost = socket.gethostname().split(".")[0]
     # As of now we only generate one WARC file. Add serial in here to adhere to the warc specification.
     serial = '00000'
-    return "-".join([prefix, get_current_timestamp(), serial, crawlhost]) + ".warc.gz"
+
+    return "-".join([prefix, timestamp, serial, crawlhost]) + ".warc.gz"
 
 
 class WARCReader(BaseWARCReader):
