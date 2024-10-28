@@ -2,23 +2,30 @@ from __future__ import annotations
 
 import gzip
 import io
+import json
 import os
 import zipfile
 from collections import defaultdict
 from functools import partial
+from typing import Any
 
+from scrapy import __version__ as scrapy_version
 from scrapy.settings import Settings
 from smart_open import open as smart_open
 from typing_extensions import IO, TYPE_CHECKING, Dict, Generator, List, Union
 from warc.warc import WARCRecord
 
+from scrapy_webarchive import __version__ as scrapy_webarchive_version
 from scrapy_webarchive.cdxj import CdxjRecord, write_cdxj_index
 from scrapy_webarchive.utils import (
+    TIMESTAMP_DT_FORMAT,
+    WARC_DT_FORMAT,
     add_ftp_credentials,
-    get_current_timestamp,
+    get_formatted_dt_string,
     get_gcs_client,
     get_s3_client,
     get_scheme_from_uri,
+    hash_stream,
 )
 from scrapy_webarchive.warc import WARCReader
 
@@ -26,14 +33,21 @@ if TYPE_CHECKING:
     from scrapy_webarchive.extensions import FilesStoreProtocol
 
 
+WACZ_VERSION = "1.1.1"
+
 class WaczFileCreator:
     """Handles creating WACZ archives."""
 
-    def __init__(self, store: 'FilesStoreProtocol', warc_fname: str, collection_name: str, cdxj_fname: str = "index.cdxj") -> None:
+    hash_type = "sha256"
+    datapackage_fname = "datapackage.json"
+
+    def __init__(self, store: 'FilesStoreProtocol', warc_fname: str, collection_name: str, title: str, description: str, cdxj_fname: str = "index.cdxj") -> None:
         self.store = store
         self.warc_fname = warc_fname
         self.cdxj_fname = cdxj_fname
         self.collection_name = collection_name
+        self._title = title
+        self._description = description
 
     def create(self) -> None:
         """Create the WACZ file from the WARC and CDXJ index and save it in the configured store."""
@@ -59,6 +73,7 @@ class WaczFileCreator:
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             self.write_to_zip(zip_file, self.cdxj_fname, "indexes/")
             self.write_to_zip(zip_file, self.warc_fname, "archive/")
+            self.write_datapackage(zip_file)
 
         return zip_buffer
 
@@ -77,7 +92,80 @@ class WaczFileCreator:
     def get_wacz_fname(self) -> str:
         """Generate WACZ filename based on the WARC filename."""
 
-        return f"{self.collection_name}-{get_current_timestamp()}.wacz"
+        return f"{self.collection_name}-{get_formatted_dt_string(format=TIMESTAMP_DT_FORMAT)}.wacz"
+    
+    def write_datapackage(self, zip_file: zipfile.ZipFile) -> None:
+        """Main function to create and write the datapackage.json."""
+
+        package_dict = self.create_package_dict()
+
+        with zip_file.open("archive/" + self.warc_fname) as warc_fh:
+            package_dict = self.update_package_metadata_from_warc(warc_fh, package_dict)
+
+        package_dict["resources"] = self.collect_resources(zip_file)
+
+        zip_file.writestr(self.datapackage_fname, json.dumps(package_dict, indent=2))
+
+    def create_package_dict(self) -> Dict[str, Any]:
+        """Creates the initial package dictionary."""
+
+        dt_string = get_formatted_dt_string(format=WARC_DT_FORMAT)
+        return {
+            "profile": "data-package",
+            "title": self.title,
+            "description": self.description,
+            "created": dt_string,
+            "modified": dt_string,
+            "wacz_version": WACZ_VERSION,
+            "software": f"scrapy-webarchive/{scrapy_webarchive_version}, Scrapy/{scrapy_version}",
+        }
+
+    def update_package_metadata_from_warc(self, warc_fh: IO, package_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Updates the package dictionary with metadata from the WARC records."""
+
+        warc_reader = WARCReader(gzip.open(warc_fh)) if self.warc_fname.endswith(".gz") else WARCReader(warc_fh)
+
+        while True:
+            warc_record = warc_reader.read_record()
+            if warc_record is None:
+                break
+            
+            if warc_record.type == "request":
+                package_dict.update({
+                    "mainPageUrl": warc_record.url,
+                    "mainPageDate": warc_record.date,
+                })
+                break
+
+        return package_dict
+
+    def collect_resources(self, zip_file: zipfile.ZipFile) -> List[Dict[str, Any]]:
+        """Collects resource information from the zip file."""
+
+        resources = []
+
+        for zip_entry in zip_file.infolist():
+            with zip_file.open(zip_entry, "r") as stream:
+                size, hash_ = hash_stream(self.hash_type, stream)
+
+                resources.append({
+                    "name": os.path.basename(zip_entry.filename).lower(),
+                    "path": zip_entry.filename,
+                    "hash": hash_,
+                    "bytes": size,
+                })
+
+        return resources
+    
+    @property
+    def title(self):
+        return self._title or self.collection_name
+    
+    @property
+    def description(self):
+        return self._description or "This is the web archive generated by a scrapy-webarchive extension for the " \
+                        f"{self.collection_name} spider. It is mainly for scraping purposes as it does not contain " \
+                        "any js/css data. Though it can be replayed as bare HTML if the site does not depend on JavaScript."
 
 
 class WaczFile:
