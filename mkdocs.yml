@@ -9,4 +9,5 @@ nav:
 - Introduction: index.md
 - installation.md
 - usage.md
+  - Advanced Usage: advanced_usage.md
 - settings.md
