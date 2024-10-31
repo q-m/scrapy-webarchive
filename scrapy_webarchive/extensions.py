@@ -53,6 +53,12 @@ class WaczExporter:
 
         if not self.settings["SW_EXPORT_URI"]:
             raise NotConfigured
+        
+        if "scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware" in settings.getlist('SPIDER_MIDDLEWARES'):
+            raise NotConfigured("You must disable the WaczCrawlMiddleware before you can use this extension.")
+
+        if "scrapy_webarchive.downloadermiddlewares.WaczMiddleware" in settings.getlist('DOWNLOADER_MIDDLEWARES'):
+            raise NotConfigured("You must disable the WaczMiddleware before you can use this extension.")
 
         self.store: FilesStoreProtocol = self._get_store(spider_name=crawler.spider.name)
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
