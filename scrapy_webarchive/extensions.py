@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from io import BytesIO
+from typing import Tuple
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -39,6 +41,7 @@ class FilesStoreProtocol(Protocol):
 class WaczExporter:
     """WACZ exporter extension that writes spider requests/responses as WARC and later compiles them to a WACZ."""
 
+    wacz_fname = None
     STORE_SCHEMES: Dict[str, Type[FilesStoreProtocol]] = {
         "": FSFilesStore,
         "file": FSFilesStore,
@@ -50,27 +53,47 @@ class WaczExporter:
     def __init__(self, settings: Settings, crawler: Crawler) -> None:
         self.settings = settings
         self.stats = crawler.stats
+        self.crawler = crawler
 
-        if not self.settings["SW_EXPORT_URI"]:
-            raise NotConfigured
-        
-        if "scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware" in settings.getlist('SPIDER_MIDDLEWARES'):
-            raise NotConfigured("You must disable the WaczCrawlMiddleware before you can use this extension.")
+        # Check configuration prerequisites
+        self._check_configuration_prerequisites()
 
-        if "scrapy_webarchive.downloadermiddlewares.WaczMiddleware" in settings.getlist('DOWNLOADER_MIDDLEWARES'):
-            raise NotConfigured("You must disable the WaczMiddleware before you can use this extension.")
+        # Get the store URI and configure the WACZ filename
+        store_uri, self.wacz_fname  = self._retrieve_store_uri_and_wacz_fname()
 
-        self.store: FilesStoreProtocol = self._get_store(spider_name=crawler.spider.name)
+        # Initialize store and writer
+        self.store: FilesStoreProtocol = self._get_store(store_uri)
         self.writer = WarcFileWriter(collection_name=crawler.spider.name)
 
-    def _get_store(self, spider_name: str) -> FilesStoreProtocol:
-        archive_uri_template = self.settings["SW_EXPORT_URI"]
-        uri = archive_uri_template.format(**{
-            "spider": spider_name,
+    def _check_configuration_prerequisites(self) -> None:
+        """raises NotConfigured if essential settings or middleware configurations are incorrect."""
+        
+        if not self.settings.get("SW_EXPORT_URI"):
+            raise NotConfigured("Missing SW_EXPORT_URI setting.")
+        
+        forbidden_middleware = [
+            ("scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware", "SPIDER_MIDDLEWARES"),
+            ("scrapy_webarchive.downloadermiddlewares.WaczMiddleware", "DOWNLOADER_MIDDLEWARES"),
+        ]
+        if any(middleware in self.settings.getlist(key) for middleware, key in forbidden_middleware):
+            raise NotConfigured("Disable WACZ middlewares in SPIDER_MIDDLEWARES and DOWNLOADER_MIDDLEWARES.")
+
+    def _retrieve_store_uri_and_wacz_fname(self) -> Tuple[str, Union[str, None]]:
+        """Sets up the export URI based on configuration and spider context."""
+
+        export_uri = self.settings["SW_EXPORT_URI"].format(
+            spider=self.crawler.spider.name,
             **get_archive_uri_template_dt_variables(),
-        })
-        store_cls = self.STORE_SCHEMES[get_scheme_from_uri(uri)]
-        return store_cls(uri)
+        )
+
+        if os.path.isdir(export_uri):
+            return export_uri, None
+        else:
+            return os.path.split(export_uri)
+
+    def _get_store(self, store_uri: str) -> FilesStoreProtocol:
+        store_cls = self.STORE_SCHEMES[get_scheme_from_uri(store_uri)]
+        return store_cls(store_uri)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
@@ -134,8 +157,9 @@ class WaczExporter:
 
     def spider_closed(self, spider: Spider) -> None:
         wacz_creator = WaczFileCreator(
-            store=self.store, 
-            warc_fname=self.writer.warc_fname, 
+            store=self.store,
+            warc_fname=self.writer.warc_fname,
+            wacz_fname=self.wacz_fname,
             collection_name=spider.name,
             title=self.settings["SW_WACZ_TITLE"],
             description=self.settings["SW_WACZ_DESCRIPTION"],

@@ -30,6 +30,7 @@ class TestWaczFileCreator:
             cdxj_fname=self.cdxj_fname,
             title="Testing",
             description="WACZ generated durning a unit-test",
+            wacz_fname=None,
         )
 
     @freeze_time("2024-10-04 08:27:11")

@@ -47,7 +47,7 @@ class BaseWaczMiddleware:
         process, and collects valid WACZ files for further use.
 
         If only one WACZ URI is provided, it opens and assigns the file to `self.wacz` as a `WaczFile` instance. 
-        If multiple URIs are provided, valid files are grouped and assigned to `self.wacz` as a `MultiWaczFile` instance. 
+        If multiple URIs are provided, valid files are assigned to `self.wacz` as a `MultiWaczFile` instance.
         """
 
         spider.logger.info(f"[WACZDownloader] Found {len(self.wacz_uris)} WACZ URI(s) to open")
@@ -62,7 +62,9 @@ class BaseWaczMiddleware:
                 spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
 
         if wacz_files:
-            spider.logger.info(f"[WACZDownloader] Continuing with {len(wacz_files)}/{len(self.wacz_uris)} valid WACZ files")
+            spider.logger.info(
+                f"[WACZDownloader] Continuing with {len(wacz_files)}/{len(self.wacz_uris)} valid WACZ files"
+            )
             if len(wacz_files) == 1:
                 self.wacz = WaczFile(wacz_files[0])
             else:

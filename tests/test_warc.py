@@ -24,7 +24,11 @@ def test_generate_warc_fname(monkeypatch):
 
 @pytest.fixture
 def warc_record_response():
-    payload = b"""HTTP/1.0 200\r\nContent-Length: 11064\r\nDate: Mon, 07 Oct 2024 09:58:44 GMT\r\nContent-Type: text/html; charset=utf-8\r\nStrict-Transport-Security: max-age=0; includeSubDomains; preload\r\n\r\n<!DOCTYPE html>\n<html lang="en">Welcome to scrapy-webarchive!</html>"""
+    payload = (
+        b"HTTP/1.0 200\r\nContent-Length: 11064\r\nDate: Mon, 07 Oct 2024 09:58:44 GMT\r\nContent-Type: text/html; "
+        b"charset=utf-8\r\nStrict-Transport-Security: max-age=0; includeSubDomains; preload\r\n\r\n<!DOCTYPE html>\n"
+        b"<html lang=\"en\">Welcome to scrapy-webarchive!</html>"
+    )
     return WARCRecord(payload=payload, headers={"WARC-Target-URI": "http://example.com"})
 
 
