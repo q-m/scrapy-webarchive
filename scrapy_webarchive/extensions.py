@@ -63,7 +63,7 @@ class WaczExporter:
 
         # Initialize store and writer
         self.store: FilesStoreProtocol = self._get_store(store_uri)
-        self.writer = WarcFileWriter(collection_name=crawler.spider.name)
+        self.writer = WarcFileWriter(collection_name=crawler.spidercls.name)
 
     def _check_configuration_prerequisites(self) -> None:
         """raises NotConfigured if essential settings or middleware configurations are incorrect."""
@@ -82,7 +82,7 @@ class WaczExporter:
         """Sets up the export URI based on configuration and spider context."""
 
         export_uri = self.settings["SW_EXPORT_URI"].format(
-            spider=self.crawler.spider.name,
+            spider=self.crawler.spidercls.name,
             **get_archive_uri_template_dt_variables(),
         )
 
