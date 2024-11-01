@@ -91,7 +91,8 @@ class WaczExporter:
         if os.path.isdir(export_uri):
             return export_uri, None
         else:
-            return os.path.split(export_uri)
+            export_uri, wacz_fname = os.path.split(export_uri)
+            return f"{export_uri}/", wacz_fname
 
     def _get_store(self, store_uri: str) -> FilesStoreProtocol:
         store_cls = self.STORE_SCHEMES[get_scheme_from_uri(store_uri)]
