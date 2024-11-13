@@ -6,8 +6,9 @@ theme:
   name: material
 
 nav:
-- Introduction: index.md
-- installation.md
-- usage.md
-  - Advanced Usage: advanced_usage.md
-- settings.md
+  - Introduction: index.md
+  - Installation: installation.md
+  - Usage:
+      - Usage: usage.md
+      - Advanced Usage: advanced_usage.md
+  - Settings: settings.md
