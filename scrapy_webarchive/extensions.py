@@ -107,7 +107,7 @@ class WaczExporter:
         except AttributeError:
             exporter = cls(crawler.settings, crawler)
 
-        crawler.signals.connect(exporter.response_received, signal=signals.response_received)
+        crawler.signals.connect(exporter.response_downloaded, signal=signals.response_downloaded)
         crawler.signals.connect(exporter.spider_closed, signal=signals.spider_closed)
         crawler.signals.connect(exporter.spider_opened, signal=signals.spider_opened)
         return exporter
@@ -143,7 +143,7 @@ class WaczExporter:
     def spider_opened(self) -> None:
         self.writer.write_warcinfo(robotstxt_obey=self.settings["ROBOTSTXT_OBEY"])
 
-    def response_received(self, response: Response, request: Request, spider: Spider) -> None:
+    def response_downloaded(self, response: Response, request: Request, spider: Spider) -> None:
         request.meta["WARC-Date"] = get_formatted_dt_string(format=WARC_DT_FORMAT)
 
         # Write response WARC record
