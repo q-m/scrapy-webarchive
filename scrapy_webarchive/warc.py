@@ -56,7 +56,7 @@ class WarcFileWriter:
         headers: List[Tuple[str, str]], 
         warc_headers: StatusAndHeaders, 
         content_type: str, 
-        content: str, 
+        content: bytes, 
         http_line: str,
     ) -> ArcWarcRecord:
         """Write any WARC record (response or request) to a WARC file."""
@@ -64,7 +64,7 @@ class WarcFileWriter:
         with open(self.warc_fname, "ab") as fh:
             writer = WARCWriter(fh, gzip=True)
             http_headers = StatusAndHeaders(statusline=http_line, headers=headers, is_http_request=True)
-            payload = BytesIO(bytes(content, "utf-8"))
+            payload = BytesIO(content)
 
             record = writer.create_warc_record(
                 uri=url,
@@ -103,7 +103,7 @@ class WarcFileWriter:
         record = self.write_record(
             url=response.url,
             record_type="response",
-            content=response.body.decode(),
+            content=response.body,
             content_type="application/http; msgtype=response",
             headers=headers,
             warc_headers=warc_headers,
@@ -138,7 +138,7 @@ class WarcFileWriter:
             url=request.url,
             record_type="request",
             content_type="application/http; msgtype=request",
-            content=request.body.decode(),
+            content=request.body,
             headers=headers,
             warc_headers=warc_headers,
             http_line=http_line,
