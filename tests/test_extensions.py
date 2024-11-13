@@ -40,7 +40,7 @@ class TestWaczExporterExtension:
         extension = WaczExporter.from_crawler(crawler)
         assert isinstance(extension.store, FTPFilesStore)
 
-    def test_response_downloaded(self):
+    def test_response_received(self):
         crawler = get_crawler(settings_dict={"SW_EXPORT_URI": "/tmp/scrapy-webarchive/wacz/"})
         crawler.spider = crawler._create_spider("quotes")
         extension = WaczExporter.from_crawler(crawler)
@@ -49,7 +49,7 @@ class TestWaczExporterExtension:
         # Call the method under test
         request = Request("http://example.com")
         response = Response(request.url)
-        extension.response_downloaded(response, request, crawler.spider)
+        extension.response_received(response, request, crawler.spider)
 
         # Verify that the WARC date was set in request meta
         assert "WARC-Date" in request.meta
