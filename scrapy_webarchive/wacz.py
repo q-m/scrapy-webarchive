@@ -4,6 +4,7 @@ import gzip
 import io
 import json
 import os
+import tempfile
 import zipfile
 from collections import defaultdict
 from functools import partial
@@ -190,6 +191,7 @@ class WaczFile:
     def __init__(self, file: IO):
         self.wacz_file = zipfile.ZipFile(file)
         self.index = self._parse_index(self._get_index(self.wacz_file))
+        self.warc_cache = {}
 
     def _find_in_index(self, url: str) -> Union[CdxjRecord, None]:
         """Looks for the most relevant CDXJ record for a given URL in the index."""
@@ -204,10 +206,15 @@ class WaczFile:
 
         warc_file: Union[gzip.GzipFile, IO]
 
-        try:
+        if not self.warc_cache.get(cdxj_record.data["filename"]):
+            tmp = tempfile.NamedTemporaryFile()
             warc_file = self.wacz_file.open("archive/" + cdxj_record.data["filename"])
-        except KeyError:
-            return None
+            with open(tmp.name, 'wb') as f:
+                f.write(warc_file.read())
+            
+            self.warc_cache[cdxj_record.data["filename"]] = tmp
+        else:
+            warc_file = self.warc_cache[cdxj_record.data["filename"]]
 
         warc_file.seek(int(cdxj_record.data["offset"]))
         if cdxj_record.data["filename"].endswith(".gz"):
