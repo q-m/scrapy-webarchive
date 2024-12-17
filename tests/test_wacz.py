@@ -9,7 +9,7 @@ from scrapy import __version__ as scrapy_version
 
 from scrapy_webarchive import __version__ as scrapy_webarchive_version
 from scrapy_webarchive.extensions import FilesStoreProtocol
-from scrapy_webarchive.wacz import WACZ_VERSION, WaczFileCreator
+from scrapy_webarchive.wacz.creator import WACZ_VERSION, WaczFileCreator
 
 
 class TestWaczFileCreator:
