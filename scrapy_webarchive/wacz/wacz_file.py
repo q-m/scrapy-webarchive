@@ -3,11 +3,11 @@ from __future__ import annotations
 import gzip
 from collections import defaultdict
 from io import BytesIO
+
 from typing_extensions import IO, Dict, Generator, List, Union
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj import CdxjRecord
-
 from scrapy_webarchive.wacz.constants import ARCHIVE_DIR
 from scrapy_webarchive.wacz.storages import ZipStorageHandler
 from scrapy_webarchive.warc import WARCReader
@@ -38,7 +38,11 @@ class WaczFile:
         size = int(cdxj_record.data["length"])
 
         try:    
-            file_part = self.storage_handler.fetch_file_part(ARCHIVE_DIR + cdxj_record.data["filename"], offset=offset, size=size)
+            file_part = self.storage_handler.fetch_file_part(
+                file_name=ARCHIVE_DIR + cdxj_record.data["filename"],
+                offset=offset,
+                size=size,
+            )
         except FileNotFoundError:
             return None
 
@@ -81,7 +85,7 @@ class WaczFile:
             except FileNotFoundError:
                 continue
 
-        raise FileNotFoundError(f"No valid index file found in WACZ file")
+        raise FileNotFoundError("No valid index file found in WACZ file")
 
     def _parse_index(self, index_file: Union[gzip.GzipFile, IO]) -> Dict[str, List[CdxjRecord]]:
         cdxj_records = defaultdict(list)

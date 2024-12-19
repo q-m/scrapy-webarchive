@@ -1,17 +1,16 @@
-from abc import ABC, abstractmethod
-from functools import cached_property
 import gzip
-from io import BytesIO
 import os
 import struct
 import zipfile
+from abc import ABC, abstractmethod
+from functools import cached_property
+from io import BytesIO
 from urllib.parse import urlparse
+
 from scrapy.exceptions import NotConfigured
 from scrapy.utils.boto import is_botocore_available
 
-EOCD_SIGNATURE = b"\x50\x4b\x05\x06"
-EOCD_RECORD_SIZE = 22
-CD_HEADER_SIGNATURE = b"\x50\x4b\x01\x02"
+from scrapy_webarchive.wacz import zip_utils
 
 
 class ZipStorageHandler(ABC):
@@ -88,28 +87,32 @@ class RemoteZipStorageHandler(ZipStorageHandler):
     @abstractmethod
     def get_object(self, range_bytes: str) -> bytes:
         """Fetch an object (or part of it) from remote storage."""
-
         pass
 
     @abstractmethod
     def get_file_info(self) -> dict:
         """Get metadata about the remote file."""
-
         pass
 
     def _find_eocd(self, file_size: int) -> int:
+        """Find the End of Central Directory (EOCD) in the ZIP file."""
+
         search_offset = max(0, file_size - 65536)
         range_bytes = f"bytes={search_offset}-{file_size - 1}"
-
         data = self.get_object(range_bytes)
-        eocd_offset = data.rfind(EOCD_SIGNATURE)
+        return zip_utils.find_eocd(data, file_size)
 
-        if eocd_offset == -1:
-            raise ValueError("EOCD not found in ZIP file")
+    def _find_zip64_eocd(self, eocd_offset: int) -> int:
+        """Find the ZIP64 End of Central Directory (EOCD)."""
 
-        return search_offset + eocd_offset
+        locator_offset = eocd_offset - 20
+        range_bytes = f"bytes={locator_offset}-{eocd_offset - 1}"
+        locator = self.get_object(range_bytes)
+        return zip_utils.find_zip64_eocd(locator)
 
     def _get_file_header_length(self, offset: int) -> int:
+        """Retrieve the length of a file header from the ZIP file."""
+
         range_bytes = f"bytes={offset}-{offset + 29}"
         local_header = self.get_object(range_bytes)
 
@@ -120,49 +123,28 @@ class RemoteZipStorageHandler(ZipStorageHandler):
         return 30 + file_name_length + extra_field_length
 
     def _get_zip_metadata(self) -> dict:
+        """Retrieve metadata from the ZIP file, including central directory information."""
+
         file_size = self.get_file_info()["ContentLength"]
         eocd_offset = self._find_eocd(file_size)
-
-        range_bytes = f"bytes={eocd_offset}-{eocd_offset + EOCD_RECORD_SIZE - 1}"
+        range_bytes = f"bytes={eocd_offset}-{eocd_offset + zip_utils.EOCD_RECORD_SIZE - 1}"
         eocd = self.get_object(range_bytes)
 
-        cd_start, cd_size = self._parse_eocd(eocd)
+        if zip_utils.is_zip64(eocd):
+            zip64_eocd_offset = self._find_zip64_eocd(eocd_offset)
+            if zip64_eocd_offset is None:
+                raise ValueError("ZIP64 EOCD Locator not found")
+
+            range_bytes = f"bytes={zip64_eocd_offset}-{zip64_eocd_offset + zip_utils.ZIP64_EOCD_RECORD_SIZE - 1}"
+            zip64_eocd = self.get_object(range_bytes)
+            cd_start, cd_size = zip_utils.parse_zip64_eocd(zip64_eocd)
+        else:
+            cd_start, cd_size = zip_utils.parse_eocd(eocd)
+
         range_bytes = f"bytes={cd_start}-{cd_start + cd_size - 1}"
         central_directory = self.get_object(range_bytes)
 
-        return self._parse_central_directory(central_directory)
-
-    def _parse_eocd(self, eocd: bytes) -> tuple:
-        cd_size = struct.unpack("<I", eocd[12:16])[0]
-        cd_start = struct.unpack("<I", eocd[16:20])[0]
-        return cd_start, cd_size
-
-    def _parse_central_directory(self, central_directory):
-        """Parse the Central Directory and return a list of file metadata."""
-
-        entries = {}
-        offset = 0
-
-        while offset < len(central_directory):
-            signature = central_directory[offset : offset + 4]
-            if signature != CD_HEADER_SIGNATURE:
-                break
-
-            file_name_length = struct.unpack("<H", central_directory[offset + 28 : offset + 30])[0]
-            extra_field_length = struct.unpack("<H", central_directory[offset + 30 : offset + 32])[0]
-            compressed_size = struct.unpack("<I", central_directory[offset + 20 : offset + 24])[0]
-            comment_length = struct.unpack("<H", central_directory[offset + 32 : offset + 34])[0]
-            header_offset = struct.unpack("<I", central_directory[offset + 42 : offset + 46])[0]
-            file_name = central_directory[offset + 46 : offset + 46 + file_name_length].decode("utf-8")
-
-            entries[file_name] = {
-                "header_offset": header_offset,
-                "file_header_length": self._get_file_header_length(header_offset),
-                "compressed_size": compressed_size,
-            }
-            offset += 46 + file_name_length + extra_field_length + comment_length
-
-        return entries
+        return zip_utils.parse_central_directory(central_directory, self._get_file_header_length)
 
 
 class S3ZipStorageHandler(RemoteZipStorageHandler):
