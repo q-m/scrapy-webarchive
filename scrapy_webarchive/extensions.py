@@ -17,7 +17,7 @@ from twisted.internet.defer import Deferred
 from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
 
 from scrapy_webarchive.utils import WARC_DT_FORMAT, get_formatted_dt_string, get_scheme_from_uri
-from scrapy_webarchive.wacz import WaczFileCreator
+from scrapy_webarchive.wacz.creator import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
 
