@@ -8,7 +8,7 @@ from cdxj_indexer.main import CDXJIndexer
 from typing_extensions import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from scrapy_webarchive.wacz import WaczFile
+    from scrapy_webarchive.wacz.wacz_file import WaczFile
 
 CDXREC = re.compile(
     r"^(?P<surt>(?P<host>[^\)\s]+)\)(?P<path>[^\?\s]+)?(\?(?P<query>\S+))?)"
