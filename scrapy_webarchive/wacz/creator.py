@@ -70,7 +70,7 @@ class WaczFileCreator:
 
         zip_buffer = io.BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as zip_file:
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_STORED, allowZip64=True) as zip_file:
             self.write_to_zip(zip_file, self.cdxj_fname, INDEXES_DIR)
             self.write_to_zip(zip_file, self.warc_fname, ARCHIVE_DIR)
             self.write_datapackage(zip_file)
