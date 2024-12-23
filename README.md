@@ -12,7 +12,7 @@ Scrapy Webarchive is a plugin for Scrapy that allows users to capture and export
 
 ## Compatibility
 
-* Python 3.7, 3.8, 3.9, 3.10, 3.11 and 3.12
+* Python 3.8, 3.9, 3.10, 3.11 and 3.12
 
 ## Documentation
 

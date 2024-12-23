@@ -39,11 +39,14 @@ This setting defines the description of the WACZ used in the `datapackage.json`,
 
 ### `SW_WACZ_SOURCE_URI`
 
+⚠️ Scraping against a remote source currently only supports AWS S3.
+
 ```python
+SW_WACZ_SOURCE_URI = "file:///Users/username/Documents/archive.wacz"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 
 # Allows multiple sources, comma seperated.
-SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz,/path/to/archive.wacz"
+SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz,file:///Users/username/Documents/archive.wacz"
 ```
 
 This setting defines the location of the WACZ file that should be used as a source for the crawl job.

@@ -48,12 +48,24 @@ def test_parse_zip64_eocd():
 
 
 def test_is_zip64():
-    eocd = zip_utils.EOCD_SIGNATURE + b"A" * 4 + struct.pack("<H", 0xFFFF) + struct.pack("<H", 0xFFFF) \
-        + struct.pack("<I", 0xFFFFFFFF) + struct.pack("<I", 0xFFFFFFFF)
+    eocd = (
+        zip_utils.EOCD_SIGNATURE
+        + b"A" * 4
+        + struct.pack("<H", 0xFFFF)      # Number of entries on this disk (set to maximum 0xFFFF for ZIP64)
+        + struct.pack("<H", 0xFFFF)      # Total number of entries (set to maximum 0xFFFF for ZIP64)
+        + struct.pack("<I", 0xFFFFFFFF)  # Size of the central directory (set to maximum 0xFFFFFFFF for ZIP64)
+        + struct.pack("<I", 0xFFFFFFFF)  # Offset of the central directory (set to maximum 0xFFFFFFFF for ZIP64)
+    )
     assert zip_utils.is_zip64(eocd)
 
-    eocd = zip_utils.EOCD_SIGNATURE + b"A" * 4 + struct.pack("<H", 100) + struct.pack("<H", 100) \
-        + struct.pack("<I", 4000) + struct.pack("<I", 8000)
+    eocd = (
+        zip_utils.EOCD_SIGNATURE
+        + b"A" * 4
+        + struct.pack("<H", 100)   # Number of entries on this disk (normal value)
+        + struct.pack("<H", 100)   # Total number of entries (normal value)
+        + struct.pack("<I", 4000)  # Size of the central directory (normal value)
+        + struct.pack("<I", 8000)  # Offset of the central directory (normal value)
+    )
     assert not zip_utils.is_zip64(eocd)
 
 
