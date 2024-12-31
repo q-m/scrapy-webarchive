@@ -10,6 +10,7 @@ from urllib.parse import unquote, urlparse
 from scrapy.exceptions import NotConfigured
 from scrapy.utils.boto import is_botocore_available
 
+from scrapy_webarchive.exceptions import UnsupportedURIException
 from scrapy_webarchive.wacz import zip_utils
 
 
@@ -224,6 +225,7 @@ class ZipStorageHandlerFactory:
             handler.AWS_USE_SSL = settings["AWS_USE_SSL"]
             handler.AWS_VERIFY = settings["AWS_VERIFY"]
             return handler(uri)
-        else:
+        elif uri.startswith('file://'):
             return LocalZipStorageHandler(uri)
-        # TODO: GC, Azure, etc.
+        else:
+            raise UnsupportedURIException(f"URI scheme not supported: {uri}")
