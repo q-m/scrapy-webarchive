@@ -68,10 +68,7 @@ class BaseWaczMiddleware:
             spider.logger.info(
                 f"[WACZDownloader] Continuing with {len(wacz_files)}/{len(self.wacz_uris)} valid WACZ files"
             )
-            if len(wacz_files) == 1:
-                self.wacz = wacz_files[0]
-            else:
-                self.wacz = MultiWaczFile([wacz_file for wacz_file in wacz_files])
+            self.wacz = wacz_files[0] if len(wacz_files) == 1 else MultiWaczFile(wacz_files)
 
         # If there are not wacz_files, we raise a `WaczMiddlewareException` in the downloader/spider middleware.
         # Raising an exception here does not stop the job from running. If there are no valid WACZ files configured
