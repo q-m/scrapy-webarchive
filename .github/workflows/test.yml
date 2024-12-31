@@ -31,7 +31,6 @@ jobs:
     strategy:
       matrix:
         toxenv:
-          - py37-scrapy29
           - py312-scrapy29
           - py38-scrapy210
           - py312-scrapy210
@@ -39,8 +38,6 @@ jobs:
           - py312-scrapy211
           - py312-scrapymaster
         include:
-          - toxenv: py37-scrapy29
-            python-version: 3.7 
           - toxenv: py312-scrapy29
             python-version: '3.12'
 

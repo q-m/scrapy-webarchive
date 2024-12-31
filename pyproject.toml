@@ -13,7 +13,7 @@ dependencies = [
     "wacz==0.5.0",
     "cdxj-indexer==1.4.5",
 ]
-requires-python = ">=3.7,<3.13"
+requires-python = ">=3.8,<3.13"
 authors = []
 maintainers = []
 description = "A webarchive extension for Scrapy"

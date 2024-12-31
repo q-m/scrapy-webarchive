@@ -11,7 +11,8 @@ from scrapy.statscollectors import StatsCollector
 from typing_extensions import Iterable, Self, Union
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
-from scrapy_webarchive.wacz import MultiWaczFile, WaczFile, open_wacz_file
+from scrapy_webarchive.wacz.storages import ZipStorageHandlerFactory
+from scrapy_webarchive.wacz.wacz_file import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
 
 
@@ -55,20 +56,19 @@ class BaseWaczMiddleware:
         
         for wacz_uri in self.wacz_uris:
             spider.logger.info(f"[WACZDownloader] Opening WACZ {wacz_uri}")
-            wacz_file = open_wacz_file(wacz_uri, self.timeout, spider.settings)
-            if wacz_file:
-                wacz_files.append(wacz_file)
-            else:
+            storage_handler = ZipStorageHandlerFactory.get_handler(wacz_uri, spider.settings)
+
+            if not storage_handler.zip_exists:
                 spider.logger.error(f"[WACZDownloader] Could not open WACZ {wacz_uri}")
+                continue
+
+            wacz_files.append(WaczFile(storage_handler=storage_handler))
 
         if wacz_files:
             spider.logger.info(
                 f"[WACZDownloader] Continuing with {len(wacz_files)}/{len(self.wacz_uris)} valid WACZ files"
             )
-            if len(wacz_files) == 1:
-                self.wacz = WaczFile(wacz_files[0])
-            else:
-                self.wacz = MultiWaczFile(wacz_files)
+            self.wacz = wacz_files[0] if len(wacz_files) == 1 else MultiWaczFile(wacz_files)
 
         # If there are not wacz_files, we raise a `WaczMiddlewareException` in the downloader/spider middleware.
         # Raising an exception here does not stop the job from running. If there are no valid WACZ files configured

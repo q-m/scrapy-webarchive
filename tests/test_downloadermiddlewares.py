@@ -39,7 +39,7 @@ class BaseTestWaczMiddleware:
 
 class TestWaczMiddleware(BaseTestWaczMiddleware):
     def _get_wacz_source_url(self):
-        return get_test_data_path("warc_1_1", "quotes.wacz.gz").as_uri()
+        return get_test_data_path("warc_1_1", "quotes.wacz").as_uri()
 
     def test_retrieve_from_wacz_record_not_found(self):
         request = Request("http://www.example.com/")
@@ -58,8 +58,8 @@ class TestWaczMiddleware(BaseTestWaczMiddleware):
 
 class TestWaczMiddlewareMultiWacz(BaseTestWaczMiddleware):
     def _get_wacz_source_url(self):
-        wacz_1 = get_test_data_path("warc_1_1", "quotes.wacz.gz").as_uri()
-        wacz_2 = get_test_data_path("warc_1_1", "goodreads.wacz.gz").as_uri()
+        wacz_1 = get_test_data_path("warc_1_1", "quotes.wacz").as_uri()
+        wacz_2 = get_test_data_path("warc_1_1", "goodreads.wacz").as_uri()
         return f'{wacz_1},{wacz_2}'
 
     def test_retrieve_from_first_wacz(self):
