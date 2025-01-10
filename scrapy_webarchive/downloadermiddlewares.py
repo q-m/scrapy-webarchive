@@ -39,12 +39,8 @@ class WaczMiddleware(BaseWaczMiddleware):
     def process_request(self, request: Request, spider: Spider):
         """Called for each request that goes through the downloader."""
 
-        # Continue default crawl behaviour.
-        if not self.crawl:
-            return None
-
         # If the attribute has not been set, none of the WACZ could be opened.
-        if self.crawl and not hasattr(self, "wacz"):
+        if not hasattr(self, "wacz"):
             raise WaczMiddlewareException("Could not open any WACZ files, check your WACZ URIs and authentication.")
 
         # Check if the request should be ignored.

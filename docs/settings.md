@@ -57,4 +57,4 @@ This setting defines the location of the WACZ file that should be used as a sour
 SW_WACZ_CRAWL = True
 ```
 
-Setting to control the scraping behavior. If set to `False`, the scraper will bypass the WACZ middleware/downloadermiddleware during the crawling process.
+Setting to ignore original `start_requests`, just yield all responses found in WACZ.
