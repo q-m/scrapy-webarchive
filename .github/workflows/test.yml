@@ -27,7 +27,7 @@ jobs:
 
   test:
     name: unittests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # Ubuntu LTS 22.04 is the latest image that includes Python3.7
     strategy:
       matrix:
         toxenv:
