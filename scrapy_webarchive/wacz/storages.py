@@ -3,7 +3,6 @@ import os
 import struct
 import zipfile
 from abc import ABC, abstractmethod
-from functools import cached_property
 from io import BytesIO
 from urllib.parse import unquote, urlparse
 
@@ -207,7 +206,7 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
         end = start + size - 1
         return f"bytes={start}-{end}"
 
-    @cached_property
+    @property
     def zip_exists(self) -> bool:
         return bool(self.get_file_info())
 
