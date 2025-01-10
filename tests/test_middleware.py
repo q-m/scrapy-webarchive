@@ -17,7 +17,6 @@ class TestWaczCrawlMiddlewareWarc11:
     def _get_settings(self, **new_settings):
         settings = {
             "SW_WACZ_SOURCE_URI": get_test_data_path("warc_1_1", "quotes.wacz").as_uri(),
-            "SW_WACZ_TIMEOUT": 60,
         }
         settings.update(new_settings)
         return Settings(settings)

@@ -30,7 +30,6 @@ class BaseWaczMiddleware:
 
         self.wacz_uris = re.split(r"\s*,\s*", wacz_uri)
         self.crawl = settings.get("SW_WACZ_CRAWL", False)
-        self.timeout = settings.getfloat("SW_WACZ_TIMEOUT", 60.0)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
