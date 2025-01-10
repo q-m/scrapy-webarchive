@@ -24,7 +24,6 @@ class BaseTestWaczMiddleware:
         settings = {
             "SW_WACZ_SOURCE_URI": self._get_wacz_source_url(),
             "SW_WACZ_CRAWL": True,
-            "SW_WACZ_TIMEOUT": 60,
         }
         settings.update(new_settings)
         return Settings(settings)
