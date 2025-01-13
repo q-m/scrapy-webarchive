@@ -73,12 +73,8 @@ class WaczExporter:
         if not self.settings.get("SW_EXPORT_URI"):
             raise NotConfigured("Missing SW_EXPORT_URI setting.")
         
-        forbidden_middleware = [
-            ("scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware", "SPIDER_MIDDLEWARES"),
-            ("scrapy_webarchive.downloadermiddlewares.WaczMiddleware", "DOWNLOADER_MIDDLEWARES"),
-        ]
-        if any(middleware in self.settings.getlist(key) for middleware, key in forbidden_middleware):
-            raise NotConfigured("Disable WACZ middlewares in SPIDER_MIDDLEWARES and DOWNLOADER_MIDDLEWARES.")
+        if self.settings.get("SW_WACZ_SOURCE_URI"):
+            raise NotConfigured("WACZ exporter is disabled when scraping from a WACZ archive.")
 
     def _retrieve_store_uri_and_wacz_fname(self) -> Tuple[str, Union[str, None]]:
         """Sets up the export URI based on configuration and spider context."""

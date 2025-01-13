@@ -30,6 +30,7 @@ gcs = ["google-cloud-storage"]
 all = ["boto3", "google-cloud-storage"]
 
 [project.urls]
+Documentation = "https://developers.thequestionmark.org/scrapy-webarchive/"
 Repository = "https://github.com/q-m/scrapy-webarchive"
 
 [tool.ruff]
