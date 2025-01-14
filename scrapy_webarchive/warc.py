@@ -45,6 +45,8 @@ class WARCReader(BaseWARCReader):
 class WarcFileWriter:
     """Handles writing WARC files."""
 
+    WARC_VERSION = WARCWriter.WARC_1_1
+
     def __init__(self, collection_name: str, warc_fname: Optional[str] = None) -> None:
         self.collection_name = collection_name
         self.warc_fname = warc_fname or generate_warc_fname(prefix=collection_name)
@@ -62,7 +64,7 @@ class WarcFileWriter:
         """Write any WARC record (response or request) to a WARC file."""
 
         with open(self.warc_fname, "ab") as fh:
-            writer = WARCWriter(fh, gzip=True)
+            writer = WARCWriter(fh, gzip=True, warc_version=self.WARC_VERSION)
             http_headers = StatusAndHeaders(statusline=http_line, headers=headers, is_http_request=True)
             payload = BytesIO(content)
 
@@ -90,7 +92,7 @@ class WarcFileWriter:
                 ("WARC-Date", request.meta["WARC-Date"]),
                 ("WARC-Record-ID", record_id),
             ],
-            protocol="WARC/1.0",
+            protocol=self.WARC_VERSION,
         )
 
         http_line = f"HTTP/1.0 {str(response.status)}"
@@ -124,7 +126,7 @@ class WarcFileWriter:
                 ("WARC-Record-ID", record_id),
                 ("WARC-Concurrent-To", concurrent_to.rec_headers.get_header('WARC-Record-ID')),
             ],
-            protocol="WARC/1.0",
+            protocol=self.WARC_VERSION,
         )
 
         http_line = f"{request.method} {urlparse(request.url).path} HTTP/1.0"
@@ -150,8 +152,8 @@ class WarcFileWriter:
 
         content = {
             "software": f"Scrapy/{scrapy_version} (+https://scrapy.org)",
-            "format": "WARC file version 1.0",
-            "conformsTo": "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.0/",
+            "format": f"WARC file version {self._warc_version_number}",
+            "conformsTo": f"https://iipc.github.io/warc-specifications/specifications/warc-format/warc-{self._warc_version_number}/",
             "isPartOf": self.collection_name,
             "robots": "obey" if robotstxt_obey else "ignore",
         }
@@ -160,6 +162,10 @@ class WarcFileWriter:
             writer = WARCWriter(fh, gzip=True)
             record = writer.create_warcinfo_record(filename=self.warc_fname, info=content)
             writer.write_record(record)
+
+    @property
+    def _warc_version_number(self):
+        return self.WARC_VERSION.split("/")[1]
 
     @staticmethod
     def __record_id() -> str:
