@@ -5,9 +5,14 @@
 .pytest_cache
 .coverage
 .mypy_cache
+.idea
+.vscode
+.env
 
-__pycache__
 build
 dist
 scrapy_webarchive.egg-info
 site
+venv
+
+__pycache__
