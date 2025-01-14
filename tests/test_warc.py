@@ -138,7 +138,7 @@ class TestWarcFileWriter:
         self.writer.write_request(request=request, concurrent_to=warc_response_record)
         warc_request_record = gzip.open(self.warc_fname, 'rb').read().decode()
 
-        assert 'WARC/1.0' in warc_request_record
+        assert 'WARC/1.1' in warc_request_record
         assert 'WARC-Type: request' in warc_request_record
         assert 'WARC-Record-ID:' in warc_request_record
         assert 'WARC-Concurrent-To: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>' in warc_request_record
@@ -157,7 +157,7 @@ class TestWarcFileWriter:
         self.writer.write_response(request=request, response=response)
         warc_response_record = gzip.open(self.warc_fname, 'rb').read().decode()
 
-        assert 'WARC/1.0' in warc_response_record
+        assert 'WARC/1.1' in warc_response_record
         assert 'WARC-Type: response' in warc_response_record
         assert 'WARC-Record-ID:' in warc_response_record
         assert 'Content-Type: application/http; msgtype=response' in warc_response_record
