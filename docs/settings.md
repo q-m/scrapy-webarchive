@@ -16,6 +16,10 @@ SW_EXPORT_URI = "s3://scrapy-webarchive/{year}/{month}/{day}/{spider}/"
 SW_EXPORT_URI = "s3://scrapy-webarchive/output.wacz"
 SW_EXPORT_URI = "s3://scrapy-webarchive/{spider}/output-{timestamp}.wacz"
 SW_EXPORT_URI = "s3://scrapy-webarchive/{year}/{month}/{day}/{spider}-{timestamp}.wacz"
+
+# Local (No scheme assumes it is "file://")
+SW_EXPORT_URI = "file:///path/to/output/{spider}/"
+SW_EXPORT_URI = "/path/to/output/{spider}/"
 ```
 
 This is the output path of the WACZ file. Multiple variables can be added that allow dynamic generation of the output path. 
@@ -42,6 +46,7 @@ This setting defines the description of the WACZ used in the `datapackage.json`,
 ⚠️ Scraping against a remote source currently only supports AWS S3.
 
 ```python
+# "file://" must be explicitly added, unlike SW_EXPORT_URI where it makes an assumption if no scheme is added.
 SW_WACZ_SOURCE_URI = "file:///Users/username/Documents/archive.wacz"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 
