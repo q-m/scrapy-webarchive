@@ -44,7 +44,7 @@ class TestWarcRecordTransformer:
             surt="com,example)/index",
             host="example",
             data={
-            "url": "http://example.com", 
+                "url": "http://example.com", 
                 "mime": "text/html", 
                 "status": "200", 
                 "digest": "sha1:AA7J5JETQ4H7GG22MU2NCAUO6LM2EPEU", 
@@ -60,11 +60,13 @@ class TestWarcRecordTransformer:
         assert request.method == "GET"
 
     def test_response_for_record_invalid_response_type(self, warc_record_request):
+        request = Request("http://example.com")
         with pytest.raises(WaczMiddlewareException):
-            record_transformer.response_for_record(warc_record_request)
+            record_transformer.response_for_record(warc_record_request, request)
 
     def test_response_for_record(self, warc_record_response):
-        response = record_transformer.response_for_record(warc_record_response)
+        request = Request("http://example.com")
+        response = record_transformer.response_for_record(warc_record_response, request)
         assert isinstance(response, HtmlResponse)
         assert response.url == "http://example.com"
         assert response.status == 200
