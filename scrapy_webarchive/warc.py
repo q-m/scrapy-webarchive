@@ -185,7 +185,7 @@ class WarcRecordTransformer:
         # TODO: locate request in WACZ and include all relevant things (like headers)
         return Request(url=cdxj_record.data["url"], method=cdxj_record.data.get("method", "GET"), **kwargs)
 
-    def response_for_record(self, warc_record: WARCRecord, **kwargs):
+    def response_for_record(self, warc_record: WARCRecord, request: Request, **kwargs):
         """Create a Scrapy response instance from a WARCRecord."""
 
         # We expect a response.
@@ -220,6 +220,7 @@ class WarcRecordTransformer:
 
         return response_cls(
             url=warc_record.url,
+            request=request,
             status=int(status.decode()),
             protocol=protocol.decode(),
             headers=headers,
