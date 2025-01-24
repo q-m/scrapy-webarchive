@@ -56,11 +56,10 @@ class WaczMiddleware(BaseWaczMiddleware):
         if not warc_record:
             self.stats.inc_value("webarchive/response_not_found", spider=spider)
             return Response(url=request.url, status=404)
-        
-        request.meta["warc_record_response"] = warc_record
-        
+
         # Record found, try to re-create a response from it.
         response = record_transformer.response_for_record(warc_record, request)
+        response.meta["response_origin"] = warc_record
 
         if not response:
             self.stats.inc_value("webarchive/response_not_recognized", spider=spider)
