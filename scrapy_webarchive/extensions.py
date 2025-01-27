@@ -16,7 +16,8 @@ from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
 from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
 
-from scrapy_webarchive.utils import WARC_DT_FORMAT, get_formatted_dt_string, get_scheme_from_uri
+from scrapy_webarchive.models import WarcMetadata
+from scrapy_webarchive.utils import WARC_DT_FORMAT, WEBARCHIVE_META_KEY, get_formatted_dt_string, get_scheme_from_uri
 from scrapy_webarchive.wacz.creator import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -159,12 +160,15 @@ class WaczExporter:
         )
 
         # Write request WARC record
-        request_record = self.writer.write_request(request, concurrent_to=response_record)
+        self.writer.write_request(request, concurrent_to=response_record)
         self.stats.inc_value("webarchive/exporter/request_written", spider=spider)
 
-        request.meta['exported_warc_response'] = response_record
-        request.meta['exported_warc_request'] = request_record
-        request.meta['exported_wacz_uri'] = self.export_uri
+        warc_metadata = WarcMetadata(
+            action="write",
+            record_id=response_record.rec_headers.get_header('WARC-Record-ID'),
+            wacz_uri=self.export_uri,
+        )
+        request.meta[WEBARCHIVE_META_KEY] = warc_metadata.to_dict()
 
     def spider_closed(self, spider: Spider) -> None:
         self.wacz_creator.create()

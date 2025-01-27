@@ -35,6 +35,13 @@ class ZipStorageHandler(ABC):
 
         pass
 
+    @property
+    @abstractmethod
+    def uri(self) -> str:
+        """The URI of the ZIP file."""
+
+        pass
+
 
 class LocalZipStorageHandler(ZipStorageHandler):
     """Handles ZIP files stored locally."""
@@ -42,8 +49,8 @@ class LocalZipStorageHandler(ZipStorageHandler):
     def __init__(self, uri: str):
         """Initialize the handler with a local ZIP file."""
 
-        self.uri = uri
-        parsed_uri = urlparse(self.uri)
+        self._uri = uri
+        parsed_uri = urlparse(uri)
         self.file_path = unquote(parsed_uri.path)
 
         if not self.zip_exists:
@@ -77,6 +84,10 @@ class LocalZipStorageHandler(ZipStorageHandler):
     @property
     def zip_exists(self) -> bool:
         return os.path.exists(self.file_path)
+    
+    @property
+    def uri(self) -> str:
+        return self._uri
 
 
 class RemoteZipStorageHandler(ZipStorageHandler):
@@ -163,6 +174,7 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
         if parse_result.scheme != "s3":
             raise ValueError(f"Incorrect URI scheme in {uri}, expected 's3'")
 
+        self._uri = uri
         self.bucket = parse_result.netloc
         self.path = parse_result.path.lstrip("/")
         self.s3_client = self._initialize_s3_client()
@@ -209,6 +221,10 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
     @property
     def zip_exists(self) -> bool:
         return bool(self.get_file_info())
+
+    @property
+    def uri(self) -> str:
+        return self._uri
 
 
 class ZipStorageHandlerFactory:

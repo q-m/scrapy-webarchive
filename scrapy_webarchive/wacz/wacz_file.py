@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 from collections import defaultdict
 from io import BytesIO
+from typing import Tuple
 
 from typing_extensions import IO, Dict, Generator, List, Union
 from warc.warc import WARCRecord
@@ -49,11 +50,15 @@ class WaczFile:
         warc_part = BytesIO(file_part)
         return WARCReader(warc_part).read_record()
 
-    def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
+    def get_warc_from_url(self, url: str) -> Tuple[Union[WARCRecord, None], Union[CdxjRecord, None]]:
         """Retrieves a WARC record from the WACZ archive by searching for the URL in the index."""
 
         cdxj_record = self._find_in_index(url)
-        return self.get_warc_from_cdxj_record(cdxj_record) if cdxj_record else None
+
+        if cdxj_record:
+            return self.get_warc_from_cdxj_record(cdxj_record), cdxj_record
+        
+        return None, None
 
     def iter_index(self) -> Generator[CdxjRecord, None, None]:
         """Iterates over all CDXJ records in the WACZ index."""
@@ -108,15 +113,15 @@ class MultiWaczFile:
 
         return cdxj_record.wacz_file.get_warc_from_cdxj_record(cdxj_record) if cdxj_record.wacz_file else None
         
-    def get_warc_from_url(self, url: str) -> Union[WARCRecord, None]:
+    def get_warc_from_url(self, url: str) -> Tuple[Union[WARCRecord, None], Union[CdxjRecord, None]]:
         """Searches through all WACZ files to find a WARC record that matches the provided URL."""
 
         for wacz in self.waczs:
-            warc_record = wacz.get_warc_from_url(url)
+            warc_record, cdxj_record = wacz.get_warc_from_url(url)
             if warc_record:
-                return warc_record
+                return warc_record, cdxj_record
 
-        return None
+        return None, None
 
     def iter_index(self) -> Generator[CdxjRecord, None, None]:
         """
