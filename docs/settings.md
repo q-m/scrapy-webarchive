@@ -62,4 +62,4 @@ This setting defines the location of the WACZ file that should be used as a sour
 SW_WACZ_CRAWL = True
 ```
 
-Setting to ignore original `start_requests`, just yield all responses found in WACZ.
+Setting to ignore original `start_requests`, just yield all responses found in WACZ. For more information see [Iterating a WACZ archive index](advanced_usage.md#iterating-a-wacz-archive-index).

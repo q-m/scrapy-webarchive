@@ -49,7 +49,7 @@ SW_WACZ_CRAWL = True
 
 Not all URLs will be interesting for the crawl since your WACZ will most likely contain static files such as fonts, JavaScript (website and external), stylesheets, etc. In order to improve the performance of the spider by not reading all the irrelevant request/response entries, you can configure the following atrribute in your spider, `archive_regex`:
 
-``` py title="my_wacz_spider.py"
+``` py title="my_wacz_spider.py" hl_lines="6"
 from scrapy.spiders import Spider
 
 
@@ -89,7 +89,7 @@ The `Request.meta` attribute in Scrapy allows you to store arbitrary data for us
 #### `webarchive_warc`
 This key stores the result of a WACZ crawl or export. The data associated with this key is read-only and is not used to control Scrapy's behavior. The value of this key can be accessed using the constant `WEBARCHIVE_META_KEY`, but direct usage of this constant is discouraged. Instead, you should use the provided class method to instantiate a metadata object, as shown in the example below:
 
-``` py title="my_wacz_spider.py"
+``` py title="my_wacz_spider.py" hl_lines="10"
 from scrapy.spiders import Spider
 from scrapy_webarchive.models import WarcMetadata
 

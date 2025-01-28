@@ -43,5 +43,4 @@ Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
 ``` py title="settings.py"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
-SW_WACZ_CRAWL = True
 ```
