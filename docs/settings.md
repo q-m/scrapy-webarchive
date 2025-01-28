@@ -6,7 +6,7 @@
 
 ### `SW_EXPORT_URI`
 
-```python
+``` py title="settings.py"
 # Either configure the directory where the output should be uploaded to
 SW_EXPORT_URI = "s3://scrapy-webarchive/"
 SW_EXPORT_URI = "s3://scrapy-webarchive/{spider}/"
@@ -45,7 +45,7 @@ This setting defines the description of the WACZ used in the `datapackage.json`,
 
 ⚠️ Scraping against a remote source currently only supports AWS S3.
 
-```python
+``` py title="settings.py"
 # "file://" must be explicitly added, unlike SW_EXPORT_URI where it makes an assumption if no scheme is added.
 SW_WACZ_SOURCE_URI = "file:///Users/username/Documents/archive.wacz"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
@@ -58,8 +58,8 @@ This setting defines the location of the WACZ file that should be used as a sour
 
 ### `SW_WACZ_CRAWL`
 
-```python
+``` py title="settings.py"
 SW_WACZ_CRAWL = True
 ```
 
-Setting to ignore original `start_requests`, just yield all responses found in WACZ.
+Setting to ignore original `start_requests`, just yield all responses found in WACZ. For more information see [Iterating a WACZ archive index](advanced_usage.md#iterating-a-wacz-archive-index).

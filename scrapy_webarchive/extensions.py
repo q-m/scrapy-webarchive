@@ -16,7 +16,8 @@ from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
 from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
 
-from scrapy_webarchive.utils import WARC_DT_FORMAT, get_formatted_dt_string, get_scheme_from_uri
+from scrapy_webarchive.models import WarcMetadata
+from scrapy_webarchive.utils import WARC_DT_FORMAT, WEBARCHIVE_META_KEY, get_formatted_dt_string, get_scheme_from_uri
 from scrapy_webarchive.wacz.creator import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -61,11 +62,19 @@ class WaczExporter:
         self.spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else crawler.spider.name
 
         # Get the store URI and configure the WACZ filename
-        store_uri, self.wacz_fname  = self._retrieve_store_uri_and_wacz_fname()
+        self.store_uri, self.wacz_fname  = self._retrieve_store_uri_and_wacz_fname()
 
-        # Initialize store and writer
-        self.store: FilesStoreProtocol = self._get_store(store_uri)
+        # Initialize store, writer and creator
+        self.store: FilesStoreProtocol = self._get_store(self.store_uri)
         self.writer = WarcFileWriter(collection_name=self.spider_name)
+        self.wacz_creator = WaczFileCreator(
+            store=self.store,
+            warc_fname=self.writer.warc_fname,
+            wacz_fname=self.wacz_fname,
+            collection_name=crawler.spider.name,
+            title=self.settings["SW_WACZ_TITLE"],
+            description=self.settings["SW_WACZ_DESCRIPTION"],
+        )
 
     def _check_configuration_prerequisites(self) -> None:
         """raises NotConfigured if essential settings or middleware configurations are incorrect."""
@@ -143,27 +152,30 @@ class WaczExporter:
         request.meta["WARC-Date"] = get_formatted_dt_string(format=WARC_DT_FORMAT)
 
         # Write response WARC record
-        record = self.writer.write_response(response, request)
+        response_record = self.writer.write_response(response, request)
         self.stats.inc_value("webarchive/exporter/response_written", spider=spider)
         self.stats.inc_value(
-            f"webarchive/exporter/writer_status_count/{record.http_headers.get_statuscode()}", 
+            f"webarchive/exporter/writer_status_count/{response_record.http_headers.get_statuscode()}", 
             spider=spider,
         )
 
         # Write request WARC record
-        self.writer.write_request(request, concurrent_to=record)
+        self.writer.write_request(request, concurrent_to=response_record)
         self.stats.inc_value("webarchive/exporter/request_written", spider=spider)
 
-    def spider_closed(self, spider: Spider) -> None:
-        wacz_creator = WaczFileCreator(
-            store=self.store,
-            warc_fname=self.writer.warc_fname,
-            wacz_fname=self.wacz_fname,
-            collection_name=spider.name,
-            title=self.settings["SW_WACZ_TITLE"],
-            description=self.settings["SW_WACZ_DESCRIPTION"],
+        warc_metadata = WarcMetadata(
+            action="write",
+            record_id=response_record.rec_headers.get_header('WARC-Record-ID'),
+            wacz_uri=self.export_uri,
         )
-        wacz_creator.create()
+        request.meta[WEBARCHIVE_META_KEY] = warc_metadata.to_dict()
+
+    def spider_closed(self, spider: Spider) -> None:
+        self.wacz_creator.create()
+
+    @property
+    def export_uri(self) -> str:
+        return os.path.join(self.store_uri, self.wacz_creator.wacz_fname)
 
 
 def get_archive_uri_template_dt_variables() -> dict:

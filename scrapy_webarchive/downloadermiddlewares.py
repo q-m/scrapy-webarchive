@@ -6,7 +6,9 @@ from scrapy.http.response import Response
 from scrapy.spiders import Spider
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
+from scrapy_webarchive.models import WarcMetadata
 from scrapy_webarchive.spidermiddlewares import BaseWaczMiddleware
+from scrapy_webarchive.utils import WEBARCHIVE_META_KEY
 from scrapy_webarchive.warc import record_transformer
 
 
@@ -48,17 +50,25 @@ class WaczMiddleware(BaseWaczMiddleware):
 
         # Get record from existing index entry, or else lookup by URL.
         if request.meta.get("cdxj_record"):
-            warc_record = self.wacz.get_warc_from_cdxj_record(cdxj_record=request.meta["cdxj_record"])
+            cdxj_record = request.meta["cdxj_record"]
+            warc_record = self.wacz.get_warc_from_cdxj_record(cdxj_record=cdxj_record)
         else:
-            warc_record = self.wacz.get_warc_from_url(url=request.url)
+            warc_record, cdxj_record = self.wacz.get_warc_from_url(url=request.url)
 
         # When page not found in archive, return status 404 and record it in a statistic.
         if not warc_record:
             self.stats.inc_value("webarchive/response_not_found", spider=spider)
             return Response(url=request.url, status=404)
-        
+
         # Record found, try to re-create a response from it.
-        response = record_transformer.response_for_record(warc_record)
+        response = record_transformer.response_for_record(warc_record, request)
+
+        warc_metadata = WarcMetadata(
+            action="read",
+            record_id=warc_record.header.record_id,
+            wacz_uri=cdxj_record.wacz_file.storage_handler.uri,
+        )
+        response.meta[WEBARCHIVE_META_KEY] = warc_metadata.to_dict()
 
         if not response:
             self.stats.inc_value("webarchive/response_not_recognized", spider=spider)

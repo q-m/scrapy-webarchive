@@ -11,7 +11,7 @@ The general use for this plugin is separated in two parts, exporting and crawlin
 
 To archive the requests/responses during a crawl job you need to enable the `WaczExporter` extension. 
 
-```python
+``` py title="settings.py"
 EXTENSIONS = {
     "scrapy_webarchive.extensions.WaczExporter": 543,
 }
@@ -19,7 +19,7 @@ EXTENSIONS = {
 
 This extension also requires you to set the export location using the `SW_EXPORT_URI` settings (check the settings page for different options for exporting).
 
-```python
+``` py title="settings.py"
 SW_EXPORT_URI = "s3://scrapy-webarchive/"
 ```
 
@@ -33,7 +33,7 @@ To crawl against a WACZ archive you need to use the `WaczMiddleware` downloader 
 
 To use the downloader middleware, enable it in the settings like so:
 
-```python
+``` py title="settings.py"
 DOWNLOADER_MIDDLEWARES = {
     "scrapy_webarchive.downloadermiddlewares.WaczMiddleware": 543,
 }
@@ -41,7 +41,6 @@ DOWNLOADER_MIDDLEWARES = {
 
 Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
-```python
+``` py title="settings.py"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
-SW_WACZ_CRAWL = True
 ```

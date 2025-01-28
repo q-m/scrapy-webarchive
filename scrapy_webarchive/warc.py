@@ -3,13 +3,14 @@ from __future__ import annotations
 import socket
 import uuid
 from io import BytesIO
+from typing import Union
 from urllib.parse import urlparse
 
 from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
-from typing_extensions import List, Optional, Tuple
+from typing_extensions import List, Tuple
 from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord
@@ -47,7 +48,7 @@ class WarcFileWriter:
 
     WARC_VERSION = WARCWriter.WARC_1_1
 
-    def __init__(self, collection_name: str, warc_fname: Optional[str] = None) -> None:
+    def __init__(self, collection_name: str, warc_fname: Union[str, None] = None) -> None:
         self.collection_name = collection_name
         self.warc_fname = warc_fname or generate_warc_fname(prefix=collection_name)
 
@@ -185,7 +186,7 @@ class WarcRecordTransformer:
         # TODO: locate request in WACZ and include all relevant things (like headers)
         return Request(url=cdxj_record.data["url"], method=cdxj_record.data.get("method", "GET"), **kwargs)
 
-    def response_for_record(self, warc_record: WARCRecord, **kwargs):
+    def response_for_record(self, warc_record: WARCRecord, request: Request, **kwargs):
         """Create a Scrapy response instance from a WARCRecord."""
 
         # We expect a response.
@@ -220,6 +221,7 @@ class WarcRecordTransformer:
 
         return response_cls(
             url=warc_record.url,
+            request=request,
             status=int(status.decode()),
             protocol=protocol.decode(),
             headers=headers,
