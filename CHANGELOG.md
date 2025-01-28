@@ -8,6 +8,7 @@
 
 ### Added
 
+- Introduced special meta key for WARC metadata during crawling/exporting ([#31](https://github.com/q-m/scrapy-webarchive/pull/31)) ([`f836f02`](https://github.com/q-m/scrapy-webarchive/commit/f836f02))
 - Added example spider for testing purposes
 - Document differences between URIs
 
