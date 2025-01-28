@@ -74,3 +74,30 @@ com,toscrape,quotes)/static/main.css 20241007081525074 {...}
 > com,toscrape,quotes)/tag/simile/ 20241007081524944 {...}
 > com,toscrape,quotes)/tag/truth/ 20241007081523804 {...}
 ```
+
+## Requests and Responses
+
+## Special Keys in Request.meta
+
+The `Request.meta` attribute in Scrapy allows you to store arbitrary data for use during the crawling process. While you can store any custom data in this attribute, Scrapy and its built-in extensions recognize certain special keys. Additionally, the `scrapy-webarchive` extension introduces its own special key for managing metadata. Below is a description of the key used by `scrapy-webarchive`:
+
+* `webarchive_warc`
+
+### `webarchive_warc`
+This key stores the result of a WACZ crawl or export. The data associated with this key is read-only and is not used to control Scrapy's behavior. The value of this key can be accessed using the constant `WEBARCHIVE_META_KEY`, but direct usage of this constant is discouraged. Instead, you should use the provided class method to instantiate a metadata object, as shown in the example below:
+
+```python
+from scrapy_webarchive.models import WarcMetadata
+
+
+def parse_function(self, response):
+    # Instantiate a WarcMetadata object from the response
+    warc_meta = WarcMetadata.from_response(response)
+
+    # Extract the attributes to attach while parsing a page/item
+    if warc_meta:
+        yield {
+            'warc_record_id': warc_meta.record_id,
+            'wacz_uri': warc_meta.wacz_uri,
+        }
+```
