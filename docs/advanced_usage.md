@@ -6,7 +6,7 @@
 
 The `wacz_crawl_skip` flag is applied to requests that should be ignored by the crawler. When this flag is present, the middleware intercepts the request and prevents it from being processed further, skipping both download and parsing. This is useful in scenarios where the request should not be collected during a scraping session. Usage:
 
-```python
+``` py
 yield Request(url, callback=cb_func, flags=["wacz_crawl_skip"])
 ```
 
@@ -28,7 +28,7 @@ Going around the default behaviour of the spider, the `WaczCrawlMiddleware` spid
 
 To use this strategy, enable both the spider- and the downloadermiddleware in the spider settings like so:
 
-```python
+``` py title="settings.py"
 DOWNLOADER_MIDDLEWARES = {
     "scrapy_webarchive.downloadermiddlewares.WaczMiddleware": 543,
 }
@@ -40,7 +40,7 @@ SPIDER_MIDDLEWARES = {
 
 Then define the location of the WACZ archive with `SW_WACZ_SOURCE_URI` setting:
 
-```python
+``` py title="settings.py"
 SW_WACZ_SOURCE_URI = "s3://scrapy-webarchive/archive.wacz"
 SW_WACZ_CRAWL = True
 ```
@@ -49,7 +49,10 @@ SW_WACZ_CRAWL = True
 
 Not all URLs will be interesting for the crawl since your WACZ will most likely contain static files such as fonts, JavaScript (website and external), stylesheets, etc. In order to improve the performance of the spider by not reading all the irrelevant request/response entries, you can configure the following atrribute in your spider, `archive_regex`:
 
-```python
+``` py title="my_wacz_spider.py"
+from scrapy.spiders import Spider
+
+
 class MyWaczSpider(Spider):
     name = "myspider"
     archive_regex = r"^/tag/[\w-]+/$"
@@ -77,27 +80,31 @@ com,toscrape,quotes)/static/main.css 20241007081525074 {...}
 
 ## Requests and Responses
 
-## Special Keys in Request.meta
+### Special Keys in Request.meta
 
 The `Request.meta` attribute in Scrapy allows you to store arbitrary data for use during the crawling process. While you can store any custom data in this attribute, Scrapy and its built-in extensions recognize certain special keys. Additionally, the `scrapy-webarchive` extension introduces its own special key for managing metadata. Below is a description of the key used by `scrapy-webarchive`:
 
 * `webarchive_warc`
 
-### `webarchive_warc`
+#### `webarchive_warc`
 This key stores the result of a WACZ crawl or export. The data associated with this key is read-only and is not used to control Scrapy's behavior. The value of this key can be accessed using the constant `WEBARCHIVE_META_KEY`, but direct usage of this constant is discouraged. Instead, you should use the provided class method to instantiate a metadata object, as shown in the example below:
 
-```python
+``` py title="my_wacz_spider.py"
+from scrapy.spiders import Spider
 from scrapy_webarchive.models import WarcMetadata
 
 
-def parse_function(self, response):
-    # Instantiate a WarcMetadata object from the response
-    warc_meta = WarcMetadata.from_response(response)
+class MyWaczSpider(Spider):
+    name = "myspider"
 
-    # Extract the attributes to attach while parsing a page/item
-    if warc_meta:
-        yield {
-            'warc_record_id': warc_meta.record_id,
-            'wacz_uri': warc_meta.wacz_uri,
-        }
+    def parse_function(self, response):
+        # Instantiate a WarcMetadata object from the response
+        warc_meta = WarcMetadata.from_response(response)
+
+        # Extract the attributes to attach while parsing a page/item
+        if warc_meta:
+            yield {
+                'warc_record_id': warc_meta.record_id,
+                'wacz_uri': warc_meta.wacz_uri,
+            }
 ```
