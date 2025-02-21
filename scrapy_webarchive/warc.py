@@ -18,8 +18,9 @@ from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import WARCWriter
 
 from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.constants import TIMESTAMP_DT_FORMAT
 from scrapy_webarchive.exceptions import WaczMiddlewareException
-from scrapy_webarchive.utils import TIMESTAMP_DT_FORMAT, get_formatted_dt_string, header_lines_to_dict
+from scrapy_webarchive.utils import get_formatted_dt_string, header_lines_to_dict
 
 
 def generate_warc_fname(prefix: str) -> str:

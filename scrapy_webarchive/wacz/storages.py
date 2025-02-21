@@ -7,6 +7,7 @@ from io import BytesIO
 from urllib.parse import unquote, urlparse
 
 from scrapy.exceptions import NotConfigured
+from scrapy.settings import Settings
 from scrapy.utils.boto import is_botocore_available
 
 from scrapy_webarchive.exceptions import UnsupportedURIException
@@ -157,16 +158,8 @@ class RemoteZipStorageHandler(ZipStorageHandler):
 
 class S3ZipStorageHandler(RemoteZipStorageHandler):
     """Handles ZIP files stored in Amazon S3."""
-    
-    AWS_ACCESS_KEY_ID = None
-    AWS_SECRET_ACCESS_KEY = None
-    AWS_SESSION_TOKEN = None
-    AWS_ENDPOINT_URL = None
-    AWS_REGION_NAME = None
-    AWS_USE_SSL = None
-    AWS_VERIFY = None
 
-    def __init__(self, uri: str):
+    def __init__(self, uri: str, s3_client):
         if not is_botocore_available():
             raise NotConfigured("missing botocore library")
 
@@ -177,22 +170,8 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
         self._uri = uri
         self.bucket = parse_result.netloc
         self.path = parse_result.path.lstrip("/")
-        self.s3_client = self._initialize_s3_client()
+        self.s3_client = s3_client
         self.zip_metadata = self._get_zip_metadata()
-
-    def _initialize_s3_client(self):
-        import botocore.session
-        session = botocore.session.get_session()
-        return session.create_client(
-            "s3",
-            aws_access_key_id=self.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY,
-            aws_session_token=self.AWS_SESSION_TOKEN,
-            endpoint_url=self.AWS_ENDPOINT_URL,
-            region_name=self.AWS_REGION_NAME,
-            use_ssl=self.AWS_USE_SSL,
-            verify=self.AWS_VERIFY,
-        )
 
     def get_object(self, range_bytes: str) -> bytes:
         response = self.s3_client.get_object(Bucket=self.bucket, Key=self.path, Range=range_bytes)
@@ -229,18 +208,26 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
 
 class ZipStorageHandlerFactory:
     @staticmethod
-    def get_handler(uri: str, settings) -> ZipStorageHandler:
+    def get_handler(uri: str, settings: Settings) -> ZipStorageHandler:
         if uri.startswith('s3://'):
-            handler = S3ZipStorageHandler
-            handler.AWS_ACCESS_KEY_ID = settings["AWS_ACCESS_KEY_ID"]
-            handler.AWS_SECRET_ACCESS_KEY = settings["AWS_SECRET_ACCESS_KEY"]
-            handler.AWS_SESSION_TOKEN = settings["AWS_SESSION_TOKEN"]
-            handler.AWS_ENDPOINT_URL = settings["AWS_ENDPOINT_URL"]
-            handler.AWS_REGION_NAME = settings["AWS_REGION_NAME"]
-            handler.AWS_USE_SSL = settings["AWS_USE_SSL"]
-            handler.AWS_VERIFY = settings["AWS_VERIFY"]
-            return handler(uri)
+            s3_client = get_s3_client(settings)
+            return S3ZipStorageHandler(uri, s3_client)
         elif uri.startswith('file://'):
             return LocalZipStorageHandler(uri)
         else:
             raise UnsupportedURIException(f"URI scheme not supported: {uri}")
+
+
+def get_s3_client(settings: Settings):
+    import botocore.session
+    session = botocore.session.get_session()
+    return session.create_client(
+        "s3",
+        aws_access_key_id=settings["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=settings["AWS_SECRET_ACCESS_KEY"],
+        aws_session_token=settings["AWS_SESSION_TOKEN"],
+        endpoint_url=settings["AWS_ENDPOINT_URL"],
+        region_name=settings["AWS_REGION_NAME"],
+        use_ssl=settings["AWS_USE_SSL"],
+        verify=settings["AWS_VERIFY"],
+    )

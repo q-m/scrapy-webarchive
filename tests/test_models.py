@@ -1,8 +1,8 @@
 import pytest
 from scrapy.http import Request, Response
 
+from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 from scrapy_webarchive.models import WarcMetadata
-from scrapy_webarchive.utils import WEBARCHIVE_META_KEY
 
 
 class TestWarcMetadata:
