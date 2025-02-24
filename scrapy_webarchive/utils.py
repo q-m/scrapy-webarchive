@@ -5,7 +5,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import IO, Dict, Tuple
+from typing import IO, Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 from scrapy_webarchive.constants import BUFF_SIZE
@@ -52,7 +52,7 @@ def hash_stream(hash_type: str, stream: IO) -> Tuple[int, str]:
     return size, f"{hash_type}:{hasher.hexdigest()}"
 
 
-def parse_iso8601_datetime(time_str: str) -> datetime:
+def parse_iso8601_datetime(time_str: str) -> Optional[datetime]:
     """Convert the target ISO time string to a datetime object."""
 
     if not time_str:
