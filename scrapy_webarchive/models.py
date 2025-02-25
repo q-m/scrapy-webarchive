@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Union
 
 from scrapy.http.response import Response
+from typing_extensions import Union
 
-from scrapy_webarchive.utils import WEBARCHIVE_META_KEY
+from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 
 
 @dataclass
@@ -28,7 +28,7 @@ class WarcMetadata:
             "record_id": self.record_id,
             "wacz_uri": self.wacz_uri,
         }
-    
+
     @classmethod
     def from_response(cls, response: Response) -> Union["WarcMetadata", None]:
         """Create a WarcMetadata instance from a Scrapy response object."""
@@ -42,3 +42,17 @@ class WarcMetadata:
             return None
 
         return cls(**warc_meta)
+
+
+@dataclass
+class FileInfo:
+    uri: str
+    last_modified: float
+
+    def __repr__(self):
+        return f"FileInfo(uri={self.uri}, last_modified={self.last_modified})"
+
+    def __lt__(self, other):
+        if isinstance(other, FileInfo):
+            return self.last_modified < other.last_modified
+        return NotImplemented

@@ -1,11 +1,11 @@
 import zipfile
 from io import BytesIO
-from typing import cast
 from unittest.mock import Mock
 
 import pytest
 from freezegun import freeze_time
 from scrapy import __version__ as scrapy_version
+from typing_extensions import cast
 
 from scrapy_webarchive import __version__ as scrapy_webarchive_version
 from scrapy_webarchive.extensions import FilesStoreProtocol

@@ -1,0 +1,4 @@
+WARC_DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+TIMESTAMP_DT_FORMAT = "%Y%m%d%H%M%S"
+BUFF_SIZE = 1024 * 64
+WEBARCHIVE_META_KEY = "webarchive_warc"
