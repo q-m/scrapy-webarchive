@@ -91,13 +91,6 @@ def test_extract_base_from_uri_template(uri_template: str, expected: str):
     assert result == expected
 
 
-def test_build_regex_pattern_no_placeholders():
-    uri_template = "s3://scrapy-webarchive/"
-    result = utils.build_regex_pattern(uri_template, utils.get_placeholder_patterns(spider_name="quotes"))
-    assert result.pattern == r".*"
-    assert isinstance(result, re.Pattern)
-
-
 def test_build_regex_pattern_with_placeholders():
     uri_template = "s3://scrapy-webarchive/{spider}/{year}/{month}/{day}/{timestamp}/"
     result = utils.build_regex_pattern(uri_template, utils.get_placeholder_patterns(spider_name="quotes"))

@@ -92,6 +92,9 @@ class BaseWaczMiddleware:
 
         # Edge case where the URI template does not contain any placeholders.
         if base_path == self._uri_template and not utils.is_uri_directory(self._uri_template):
+            # Export URI does not require scheme. Assume it is a local file path if no scheme is defined.
+            if self._uri_template.startswith("/"):
+                return [f"file://{self._uri_template}"]
             return [self._uri_template]
 
         regex_pattern = utils.build_regex_pattern(
@@ -121,7 +124,15 @@ class BaseWaczMiddleware:
     def _uri_template(self) -> Optional[str]:
         """Generates the search pattern based on the export URI format."""
 
-        return self.settings.get("SW_EXPORT_URI")
+        uri_template = self.settings.get("SW_EXPORT_URI")
+
+        if not uri_template:
+            return None
+        
+        if utils.is_uri_directory(uri_template):
+            uri_template += "{filename}"
+
+        return uri_template
 
     @property
     def _target_time(self) -> Optional[datetime]:

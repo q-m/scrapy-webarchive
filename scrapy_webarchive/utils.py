@@ -85,6 +85,7 @@ def get_placeholder_patterns(spider_name: str) -> Dict[str, str]:
         "{day}": r"[0-9]{2}",
         "{timestamp}": r"[0-9]+",
         "{spider}": spider_name,
+        "{filename}": r"[^/\\]+\.wacz$",
     }
 
 
@@ -122,9 +123,6 @@ def build_regex_pattern(uri_template: str, placeholder_patterns: Dict[str, str])
     """Build and compile a regex pattern from a URI template with placeholders."""
 
     first_placeholder_pos = uri_template.find("{")
-    if first_placeholder_pos == -1:
-        return re.compile(r'.*')
-
     pattern_str = uri_template[first_placeholder_pos:]
     for placeholder, regex in placeholder_patterns.items():
         pattern_str = pattern_str.replace(placeholder, regex)
