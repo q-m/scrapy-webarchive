@@ -11,10 +11,10 @@ from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
 from typing_extensions import Iterable, List, Optional, Self, Union
 
+from scrapy_webarchive import utils
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.resolvers import create_resolver
 from scrapy_webarchive.strategies import FileLookupStrategy, StrategyRegistry
-from scrapy_webarchive.utils import is_uri_directory, parse_iso8601_datetime, split_path_regex
 from scrapy_webarchive.wacz.storages import ZipStorageHandlerFactory
 from scrapy_webarchive.wacz.wacz_file import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
@@ -88,12 +88,16 @@ class BaseWaczMiddleware:
         if not self._uri_template or not self._target_time or not self._strategy:
             return []
 
-        base_path, regex_pattern = split_path_regex(self._uri_template)
+        base_path = utils.extract_base_from_uri_template(self._uri_template)
 
         # Edge case where the URI template does not contain any placeholders.
-        if base_path == self._uri_template and not is_uri_directory(self._uri_template):
+        if base_path == self._uri_template and not utils.is_uri_directory(self._uri_template):
             return [self._uri_template]
 
+        regex_pattern = utils.build_regex_pattern(
+            self._uri_template, 
+            placeholder_patterns=utils.get_placeholder_patterns(self.spider_name)
+        )
         resolver = create_resolver(settings=self.settings, base_path=base_path, regex_pattern=regex_pattern)
         matching_files = resolver.resolve()
 
@@ -117,19 +121,14 @@ class BaseWaczMiddleware:
     def _uri_template(self) -> Optional[str]:
         """Generates the search pattern based on the export URI format."""
 
-        search_template = self.settings.get("SW_EXPORT_URI")
-
-        if not search_template:
-            return None
-
-        return search_template.replace('{spider}', self.spider_name)
+        return self.settings.get("SW_EXPORT_URI")
 
     @property
     def _target_time(self) -> Optional[datetime]:
         """Parse the lookup target into a datetime object."""
 
         lookup_target = self.settings.get("SW_WACZ_LOOKUP_TARGET")
-        return parse_iso8601_datetime(lookup_target)
+        return utils.parse_iso8601_datetime(lookup_target)
 
     @property
     def _strategy(self) -> FileLookupStrategy:

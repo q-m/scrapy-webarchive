@@ -76,7 +76,7 @@ def get_archive_uri_template_dt_variables() -> dict:
     }
 
 
-def get_placeholder_patterns() -> Dict[str, str]:
+def get_placeholder_patterns(spider_name: str) -> Dict[str, str]:
     """Return a mapping of placeholders to their corresponding regex patterns."""
 
     return {
@@ -84,6 +84,7 @@ def get_placeholder_patterns() -> Dict[str, str]:
         "{month}": r"[0-9]{2}",
         "{day}": r"[0-9]{2}",
         "{timestamp}": r"[0-9]+",
+        "{spider}": spider_name,
     }
 
 
@@ -129,11 +130,3 @@ def build_regex_pattern(uri_template: str, placeholder_patterns: Dict[str, str])
         pattern_str = pattern_str.replace(placeholder, regex)
 
     return re.compile(pattern_str)
-
-def split_path_regex(uri_template: str) -> Tuple[str, re.Pattern]:
-    """Split a URI template into a base path and a regex pattern for variable parts."""
-
-    placeholder_patterns = get_placeholder_patterns()
-    base_path = extract_base_from_uri_template(uri_template)
-    regex_pattern = build_regex_pattern(uri_template, placeholder_patterns)
-    return base_path, regex_pattern

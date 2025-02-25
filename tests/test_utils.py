@@ -1,7 +1,6 @@
 import hashlib
 import io
 import re
-from unittest.mock import patch
 
 import pytest
 
@@ -59,13 +58,6 @@ def test_hash_stream_with_large_stream():
     assert result == f"sha256:{expected_hash}"
 
 
-MOCK_PLACEHOLDER_PATTERNS = {
-    "{year}": r"[0-9]{4}",
-    "{month}": r"[0-9]{2}",
-    "{day}": r"[0-9]{2}",
-    "{timestamp}": r"[0-9]+",
-}
-
 @pytest.mark.parametrize("uri, expected", [
     # Directories
     ("s3://scrapy-webarchive/quotes/", True),
@@ -101,61 +93,17 @@ def test_extract_base_from_uri_template(uri_template: str, expected: str):
 
 def test_build_regex_pattern_no_placeholders():
     uri_template = "s3://scrapy-webarchive/"
-    result = utils.build_regex_pattern(uri_template, MOCK_PLACEHOLDER_PATTERNS)
+    result = utils.build_regex_pattern(uri_template, utils.get_placeholder_patterns(spider_name="quotes"))
     assert result.pattern == r".*"
     assert isinstance(result, re.Pattern)
 
 
 def test_build_regex_pattern_with_placeholders():
-    uri_template = "s3://scrapy-webarchive/{year}/{month}/{day}/"
-    result = utils.build_regex_pattern(uri_template, MOCK_PLACEHOLDER_PATTERNS)
+    uri_template = "s3://scrapy-webarchive/{spider}/{year}/{month}/{day}/{timestamp}/"
+    result = utils.build_regex_pattern(uri_template, utils.get_placeholder_patterns(spider_name="quotes"))
 
-    assert result.pattern == "[0-9]{4}/[0-9]{2}/[0-9]{2}/"
+    assert result.pattern == "quotes/[0-9]{4}/[0-9]{2}/[0-9]{2}/[0-9]+/"
     assert isinstance(result, re.Pattern)
 
-    assert result.match("2025/01/01/")
-    assert not result.match("01/01/2025/")
-
-
-@pytest.fixture
-def mock_placeholder_patterns():
-    with patch('scrapy_webarchive.utils.get_placeholder_patterns', return_value=MOCK_PLACEHOLDER_PATTERNS):
-        yield
-
-
-def test_split_path_regex_no_placeholders(mock_placeholder_patterns):
-    uri_template = "s3://scrapy-webarchive/"
-    base_path, regex_pattern = utils.split_path_regex(uri_template)
-    assert base_path == "s3://scrapy-webarchive/"
-    assert regex_pattern.pattern == r".*"
-    assert isinstance(regex_pattern, re.Pattern)
-
-
-def test_split_path_regex_with_placeholders(mock_placeholder_patterns):
-    uri_template = "s3://scrapy-webarchive/{year}/{month}/{day}/"
-    base_path, regex_pattern = utils.split_path_regex(uri_template)
-    assert base_path == "s3://scrapy-webarchive/"
-    assert regex_pattern.pattern == "[0-9]{4}/[0-9]{2}/[0-9]{2}/"
-    assert isinstance(regex_pattern, re.Pattern)
-
-@pytest.mark.parametrize("uri_template, expected_base, expected_pattern", [
-    (
-        "s3://scrapy-webarchive/{year}/{month}/{day}/",
-        "s3://scrapy-webarchive/",
-        "[0-9]{4}/[0-9]{2}/[0-9]{2}/",
-    ),
-    (
-        "s3://scrapy-webarchive/{year}/quotes/{month}/{day}/",
-        "s3://scrapy-webarchive/",
-        "[0-9]{4}/quotes/[0-9]{2}/[0-9]{2}/",
-    ),
-    (
-        "s3://scrapy-webarchive/",
-        "s3://scrapy-webarchive/",
-        r".*"
-    ),
-])
-def test_split_path_regex_parametrized(mock_placeholder_patterns, uri_template, expected_base, expected_pattern):
-    base_path, regex_pattern = utils.split_path_regex(uri_template)
-    assert base_path == expected_base
-    assert regex_pattern.pattern == expected_pattern
+    assert result.match("quotes/2025/01/01/1735686000/")
+    assert not result.match("quotes/01/01/2025/1735686000/") # Year is not first
