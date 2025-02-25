@@ -39,7 +39,7 @@ class BeforeStrategy(FileLookupStrategy):
     """Strategy to find the file that was last modified before the target time. Should match closest to the target."""
 
     def find(self, files: List[FileInfo], target: datetime) -> Optional[str]:
-        sorted_files = sorted(files)
+        sorted_files = sorted(files, reverse=True)
         target_timestamp = target.timestamp()
 
         for file in sorted_files:
