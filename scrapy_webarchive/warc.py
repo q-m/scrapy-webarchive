@@ -3,14 +3,13 @@ from __future__ import annotations
 import socket
 import uuid
 from io import BytesIO
-from typing import Union
 from urllib.parse import urlparse
 
 from scrapy import __version__ as scrapy_version
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.responsetypes import ResponseTypes
-from typing_extensions import List, Tuple
+from typing_extensions import List, Tuple, Union
 from warc import WARCReader as BaseWARCReader
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecord

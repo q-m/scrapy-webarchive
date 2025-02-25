@@ -5,8 +5,9 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import IO, Dict, Optional, Tuple
 from urllib.parse import urlparse
+
+from typing_extensions import IO, Dict, Optional, Tuple
 
 from scrapy_webarchive.constants import BUFF_SIZE
 

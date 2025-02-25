@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Union
 
 from scrapy.http.response import Response
+from typing_extensions import Union
 
 from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 

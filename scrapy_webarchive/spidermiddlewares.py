@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import List, Optional
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -10,7 +9,7 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
-from typing_extensions import Iterable, Self, Union
+from typing_extensions import Iterable, List, Optional, Self, Union
 
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.resolvers import create_resolver

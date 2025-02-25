@@ -5,10 +5,9 @@ import io
 import json
 import os
 import zipfile
-from typing import Any
 
 from scrapy import __version__ as scrapy_version
-from typing_extensions import IO, TYPE_CHECKING, Dict, List, Union
+from typing_extensions import IO, TYPE_CHECKING, Any, Dict, List, Union
 
 from scrapy_webarchive import __version__ as scrapy_webarchive_version
 from scrapy_webarchive.cdxj import write_cdxj_index

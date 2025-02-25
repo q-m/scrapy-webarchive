@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Optional, Protocol, Type
+
+from typing_extensions import Dict, List, Optional, Protocol, Type
 
 from scrapy_webarchive.models import FileInfo
 

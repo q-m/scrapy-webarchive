@@ -3,9 +3,8 @@ from __future__ import annotations
 import gzip
 from collections import defaultdict
 from io import BytesIO
-from typing import Tuple
 
-from typing_extensions import IO, Dict, Generator, List, Union
+from typing_extensions import IO, Dict, Generator, List, Tuple, Union
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj import CdxjRecord

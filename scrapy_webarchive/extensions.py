@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from io import BytesIO
-from typing import Tuple
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -13,7 +12,7 @@ from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S
 from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
-from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
+from typing_extensions import Any, Dict, Protocol, Self, Tuple, Type, Union, cast
 
 from scrapy_webarchive.constants import WARC_DT_FORMAT, WEBARCHIVE_META_KEY
 from scrapy_webarchive.models import WarcMetadata

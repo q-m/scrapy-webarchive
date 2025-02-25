@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import List, Protocol
 from urllib.parse import urlparse
 
 from scrapy.settings import Settings
+from typing_extensions import List, Protocol
 
 from scrapy_webarchive.models import FileInfo
 from scrapy_webarchive.wacz.storages import get_s3_client
