@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import importlib
+import os
 from datetime import datetime
+from importlib.util import find_spec
 
+from scrapy.utils.project import ENVVAR
 from typing_extensions import Dict, List, Optional, Protocol, Type
 
 from scrapy_webarchive.models import FileInfo
@@ -32,10 +36,25 @@ class StrategyRegistry:
         if name not in cls._strategies:
             raise ValueError(f"Unknown strategy: {name}")
         return cls._strategies[name]()
+    
+    @classmethod
+    def auto_discover(cls):
+        """Auto-discovers strategies from the current Scrapy project."""
+
+        scrapy_module = os.environ.get(ENVVAR)
+
+        if not scrapy_module:
+            return
+
+        project_root = scrapy_module.rsplit(".", 1)[0]
+        strategies_module = f"{project_root}.strategies"
+
+        if find_spec(strategies_module):
+            importlib.import_module(strategies_module)
 
 
 @StrategyRegistry.register("before")
-class BeforeStrategy(FileLookupStrategy):
+class BeforeStrategy:
     """Strategy to find the file that was last modified before the target time. Should match closest to the target."""
 
     def find(self, files: List[FileInfo], target: datetime) -> Optional[str]:
@@ -50,7 +69,7 @@ class BeforeStrategy(FileLookupStrategy):
 
 
 @StrategyRegistry.register("after")
-class AfterStrategy(FileLookupStrategy):
+class AfterStrategy:
     """Strategy to find the file that was last modified after the target time. Should match closest to the target."""
 
     def find(self, files: List[FileInfo], target: datetime) -> Optional[str]:
@@ -62,3 +81,6 @@ class AfterStrategy(FileLookupStrategy):
                 return file.uri
 
         return None
+
+
+StrategyRegistry.auto_discover()
