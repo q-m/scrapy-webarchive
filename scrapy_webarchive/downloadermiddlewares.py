@@ -5,10 +5,10 @@ from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.spiders import Spider
 
+from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.models import WarcMetadata
 from scrapy_webarchive.spidermiddlewares import BaseWaczMiddleware
-from scrapy_webarchive.utils import WEBARCHIVE_META_KEY
 from scrapy_webarchive.warc import record_transformer
 
 

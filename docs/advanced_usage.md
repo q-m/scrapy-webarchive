@@ -108,3 +108,37 @@ class MyWaczSpider(Spider):
                 'wacz_uri': warc_meta.wacz_uri,
             }
 ```
+
+## Extending
+
+### Custom strategies
+
+You can extend `scrapy-webarchive` by adding your own custom file lookup strategy. This allows you to define a custom way to select files based on available file information (URI and last modified timestamp).
+
+To create a new strategy, define a class that implements the `FileLookupStrategy` interface and register it with `StrategyRegistry`.
+
+``` py title="strategies.py"
+from typing import List, Optional
+
+from scrapy_webarchive.models import FileInfo
+from scrapy_webarchive.strategies import StrategyRegistry
+
+
+@StrategyRegistry.register("custom")
+class CustomStrategy:
+    def find(self, files: List[FileInfo], target_time: float) -> Optional[str]:
+        # Logic goes here, should return a single URI or None. 
+        # For examples see scrapy_webarchive.strategies.
+```
+
+Once registered, you can use your strategy by setting `SW_WACZ_LOOKUP_STRATEGY` in your Scrapy settings:
+
+``` py title="settings.py"
+SW_WACZ_LOOKUP_STRATEGY = "custom"
+```
+
+If you're defining it inside a `strategies.py` module within your Scrapy project, it will be automatically discovered. Alternatively, you can imported it somewhere in your project, such as in your `settings.py` or `middlewares.py`:
+
+``` py title="settings.py"
+import my_project.custom_strategies
+```

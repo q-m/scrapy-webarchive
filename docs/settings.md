@@ -63,3 +63,34 @@ SW_WACZ_CRAWL = True
 ```
 
 Setting to ignore original `start_requests`, just yield all responses found in WACZ. For more information see [Iterating a WACZ archive index](advanced_usage.md#iterating-a-wacz-archive-index).
+
+### `SW_WACZ_LOOKUP_STRATEGY`
+
+``` py title="settings.py"
+SW_WACZ_LOOKUP_STRATEGY = "after"
+```
+
+A setting that can be used in combination with `SW_EXPORT_URI` and `SW_WACZ_LOOKUP_TARGET` to automatically resolve the most relevant archive for scraping.
+
+Supported strategies include `after` and `before`. However, the implementation of custom strategies is also supported. See [Custom strategies](advanced_usage.md#custom-strategies).
+
+### `SW_WACZ_LOOKUP_TARGET`
+
+This setting is used in combination with `SW_WACZ_LOOKUP_STRATEGY` to determine the most relevant archive for scraping based on the specified time. The value must be an **ISO 8601** formatted timestamp (YYYY-MM-DDTHH:MM:SS), representing the preferred point in time for file selection.
+
+``` py title="settings.py"
+SW_WACZ_LOOKUP_TARGET = "2025-01-01T00:00:00"
+```
+
+#### How It Works
+
+When `SW_EXPORT_URI` is set, `SW_WACZ_LOOKUP_TARGET` helps locate the closest matching file based on time.
+The strategy defined in `SW_WACZ_LOOKUP_STRATEGY` determines how files are selected relative to this timestamp.
+All of them are required in order to enable this feature.
+
+⚠️ When `SW_WACZ_SOURCE_URI` is set, these settings won't have any effect.
+
+#### Example Scenarios
+
+- **`before` strategy**: Selects the file with the closest last modified date before or exactly at the given timestamp.
+- **`after` strategy**: Selects the file with the closest last modified date after or exactly at the given timestamp.

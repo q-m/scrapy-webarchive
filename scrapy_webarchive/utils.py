@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import IO, Tuple
 from urllib.parse import urlparse
 
-WARC_DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-TIMESTAMP_DT_FORMAT = "%Y%m%d%H%M%S"
-BUFF_SIZE = 1024 * 64
-WEBARCHIVE_META_KEY = "webarchive_warc"
+from typing_extensions import IO, Dict, Optional, Tuple
+
+from scrapy_webarchive.constants import BUFF_SIZE
 
 logger = logging.getLogger(__name__)
+
 
 def get_formatted_dt_string(format: str) -> str:
     return datetime.now(timezone.utc).strftime(format)
@@ -51,3 +51,80 @@ def hash_stream(hash_type: str, stream: IO) -> Tuple[int, str]:
         hasher.update(chunk)
 
     return size, f"{hash_type}:{hasher.hexdigest()}"
+
+
+def parse_iso8601_datetime(time_str: str) -> Optional[datetime]:
+    """Convert the target ISO time string to a datetime object."""
+
+    if not time_str:
+        return None
+
+    try:
+        return datetime.fromisoformat(time_str)
+    except ValueError:
+        raise ValueError(f"Invalid date format: {time_str}. Use ISO format (YYYY-MM-DDTHH:MM:SS).")
+
+
+def get_archive_uri_template_dt_variables() -> dict:
+    current_date = datetime.now()
+
+    return {
+        "year": current_date.strftime("%Y"),
+        "month": current_date.strftime("%m"),
+        "day": current_date.strftime("%d"),
+        "timestamp": current_date.strftime("%Y%m%d%H%M%S"),
+    }
+
+
+def get_placeholder_patterns(spider_name: str) -> Dict[str, str]:
+    """Return a mapping of placeholders to their corresponding regex patterns."""
+
+    return {
+        "{year}": r"[0-9]{4}",
+        "{month}": r"[0-9]{2}",
+        "{day}": r"[0-9]{2}",
+        "{timestamp}": r"[0-9]+",
+        "{spider}": spider_name,
+        "{filename}": r"[^/\\]+\.wacz$",
+    }
+
+
+def is_uri_directory(uri: str) -> bool:
+    """Check if the URI is a directory or a file."""
+
+    parsed = urlparse(uri)
+    scheme = parsed.scheme
+    path = parsed.path
+
+    if not scheme and uri.startswith("/"):
+        path = uri
+
+    last_part = path.rstrip("/").split("/")[-1]
+
+    if path.endswith("/"):
+        return True
+    elif "." in last_part:
+        return False
+    else:
+        return True
+
+
+def extract_base_from_uri_template(uri_template: str) -> str:
+    """Extract the static base path from a URI template before the first placeholder."""
+
+    first_placeholder_pos = uri_template.find("{")
+    if first_placeholder_pos == -1:
+        return uri_template
+
+    return uri_template[:first_placeholder_pos]
+
+
+def build_regex_pattern(uri_template: str, placeholder_patterns: Dict[str, str]) -> re.Pattern:
+    """Build and compile a regex pattern from a URI template with placeholders."""
+
+    first_placeholder_pos = uri_template.find("{")
+    pattern_str = uri_template[first_placeholder_pos:]
+    for placeholder, regex in placeholder_patterns.items():
+        pattern_str = pattern_str.replace(placeholder, regex)
+
+    return re.compile(pattern_str)

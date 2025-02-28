@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
 from io import BytesIO
-from typing import Tuple
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -14,10 +12,16 @@ from scrapy.pipelines.files import FSFilesStore, FTPFilesStore, GCSFilesStore, S
 from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
 from twisted.internet.defer import Deferred
-from typing_extensions import Any, Dict, Protocol, Self, Type, Union, cast
+from typing_extensions import Any, Dict, Protocol, Self, Tuple, Type, Union, cast
 
+from scrapy_webarchive.constants import WARC_DT_FORMAT, WEBARCHIVE_META_KEY
 from scrapy_webarchive.models import WarcMetadata
-from scrapy_webarchive.utils import WARC_DT_FORMAT, WEBARCHIVE_META_KEY, get_formatted_dt_string, get_scheme_from_uri
+from scrapy_webarchive.utils import (
+    get_archive_uri_template_dt_variables,
+    get_formatted_dt_string,
+    get_scheme_from_uri,
+    is_uri_directory,
+)
 from scrapy_webarchive.wacz.creator import WaczFileCreator
 from scrapy_webarchive.warc import WarcFileWriter
 
@@ -82,7 +86,13 @@ class WaczExporter:
         if not self.settings.get("SW_EXPORT_URI"):
             raise NotConfigured("Missing SW_EXPORT_URI setting.")
         
-        if self.settings.get("SW_WACZ_SOURCE_URI"):
+        if any(
+            [
+                self.settings.get("SW_WACZ_SOURCE_URI"),
+                self.settings.get("SW_WACZ_LOOKUP_STRATEGY"),
+                self.settings.get("SW_WACZ_LOOKUP_TARGET"),
+            ]
+        ):
             raise NotConfigured("WACZ exporter is disabled when scraping from a WACZ archive.")
 
     def _retrieve_store_uri_and_wacz_fname(self) -> Tuple[str, Union[str, None]]:
@@ -93,7 +103,7 @@ class WaczExporter:
             **get_archive_uri_template_dt_variables(),
         )
 
-        if os.path.isdir(export_uri):
+        if is_uri_directory(export_uri):
             return export_uri, None
         else:
             export_uri, wacz_fname = os.path.split(export_uri)
@@ -176,14 +186,3 @@ class WaczExporter:
     @property
     def export_uri(self) -> str:
         return os.path.join(self.store_uri, self.wacz_creator.wacz_fname)
-
-
-def get_archive_uri_template_dt_variables() -> dict:
-    current_date = datetime.now()
-
-    return {
-        "year": current_date.strftime("%Y"),
-        "month": current_date.strftime("%m"),
-        "day": current_date.strftime("%d"),
-        "timestamp": current_date.strftime("%Y%m%d%H%M%S"),
-    }

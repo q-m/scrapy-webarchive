@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 
 from scrapy import Request, Spider, signals
@@ -8,9 +9,12 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
-from typing_extensions import Iterable, Self, Union
+from typing_extensions import Iterable, List, Optional, Self, Union
 
+from scrapy_webarchive import utils
 from scrapy_webarchive.exceptions import WaczMiddlewareException
+from scrapy_webarchive.resolvers import create_resolver
+from scrapy_webarchive.strategies import FileLookupStrategy, StrategyRegistry
 from scrapy_webarchive.wacz.storages import ZipStorageHandlerFactory
 from scrapy_webarchive.wacz.wacz_file import MultiWaczFile, WaczFile
 from scrapy_webarchive.warc import record_transformer
@@ -21,20 +25,22 @@ class BaseWaczMiddleware:
 
     wacz: Union[WaczFile, MultiWaczFile]
 
-    def __init__(self, settings: Settings, stats: StatsCollector) -> None:
+    def __init__(self, settings: Settings, stats: StatsCollector, spider_name) -> None:
         self.stats = stats
-        wacz_uri = settings.get("SW_WACZ_SOURCE_URI", None)
+        self.settings = settings
+        self.spider_name = spider_name
+        self.wacz_uris = self._resolve_wacz_uris()
 
-        if not wacz_uri:
+        if not self.wacz_uris:
             raise NotConfigured
 
-        self.wacz_uris = re.split(r"\s*,\s*", wacz_uri)
         self.crawl = settings.get("SW_WACZ_CRAWL", False)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
         assert crawler.stats
-        o = cls(crawler.settings, crawler.stats)
+        spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else crawler.spider.name
+        o = cls(crawler.settings, crawler.stats, spider_name)
         crawler.signals.connect(o.spider_opened, signals.spider_opened)
         return o
 
@@ -73,6 +79,37 @@ class BaseWaczMiddleware:
         # Raising an exception here does not stop the job from running. If there are no valid WACZ files configured
         # we do not want to continue the job.
 
+    def _resolve_wacz_uris(self) -> List[str]:
+        """Resolve WACZ URIs based on settings."""
+        
+        if self.settings.get("SW_WACZ_SOURCE_URI", False):
+            return re.split(r"\s*,\s*", self.settings.get("SW_WACZ_SOURCE_URI"))
+
+        if not self._uri_template or not self._target_time or not self._strategy:
+            return []
+
+        base_path = utils.extract_base_from_uri_template(self._uri_template)
+
+        # Edge case where the URI template does not contain any placeholders.
+        if base_path == self._uri_template and not utils.is_uri_directory(self._uri_template):
+            # Export URI does not require scheme. Assume it is a local file path if no scheme is defined.
+            if self._uri_template.startswith("/"):
+                return [f"file://{self._uri_template}"]
+            return [self._uri_template]
+
+        regex_pattern = utils.build_regex_pattern(
+            self._uri_template, 
+            placeholder_patterns=utils.get_placeholder_patterns(self.spider_name)
+        )
+        resolver = create_resolver(settings=self.settings, base_path=base_path, regex_pattern=regex_pattern)
+        matching_files = resolver.resolve()
+
+        if not matching_files:
+            return []
+
+        result = self._strategy.find(files=matching_files, target=self._target_time)
+        return [result] if result else []
+
     def _is_off_site(self, url: str, spider: Spider) -> bool:
         """Check if the URL is off-site based on allowed domains."""
 
@@ -82,6 +119,33 @@ class BaseWaczMiddleware:
         """Check if the URL is disallowed by the spider's archive rules."""
 
         return hasattr(spider, "archive_disallow_regexp") and not re.search(spider.archive_disallow_regexp, url)
+
+    @property
+    def _uri_template(self) -> Optional[str]:
+        """Generates the search pattern based on the export URI format."""
+
+        uri_template = self.settings.get("SW_EXPORT_URI")
+
+        if not uri_template:
+            return None
+        
+        if utils.is_uri_directory(uri_template):
+            uri_template += "{filename}"
+
+        return uri_template
+
+    @property
+    def _target_time(self) -> Optional[datetime]:
+        """Parse the lookup target into a datetime object."""
+
+        lookup_target = self.settings.get("SW_WACZ_LOOKUP_TARGET")
+        return utils.parse_iso8601_datetime(lookup_target)
+
+    @property
+    def _strategy(self) -> FileLookupStrategy:
+        """Get the lookup strategy from the registry."""
+
+        return StrategyRegistry.get(self.settings.get("SW_WACZ_LOOKUP_STRATEGY", "after"))
 
 
 class WaczCrawlMiddleware(BaseWaczMiddleware):
