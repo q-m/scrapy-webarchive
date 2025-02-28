@@ -10,9 +10,11 @@ from scrapy.http.response import Response
 from warc.warc import WARCRecord
 from warcio.recordloader import ArcWarcRecordLoader
 
-from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.cdxj.models import CdxjRecord
 from scrapy_webarchive.exceptions import WaczMiddlewareException
-from scrapy_webarchive.warc import WarcFileWriter, generate_warc_fname, record_transformer
+from scrapy_webarchive.warc.transformers import record_transformer
+from scrapy_webarchive.warc.utils import generate_warc_fname
+from scrapy_webarchive.warc.writers import WarcFileWriter
 
 
 @freeze_time("2024-10-04 08:27:11")

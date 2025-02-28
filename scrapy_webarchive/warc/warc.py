@@ -16,7 +16,7 @@ from warcio.recordloader import ArcWarcRecord
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import WARCWriter
 
-from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.cdxj.models import CdxjRecord
 from scrapy_webarchive.constants import TIMESTAMP_DT_FORMAT
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.utils import get_formatted_dt_string, header_lines_to_dict

@@ -4,8 +4,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from cdxj_indexer.main import CDXJIndexer
-from typing_extensions import TYPE_CHECKING, List
+from typing_extensions import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapy_webarchive.wacz.wacz_file import WaczFile
@@ -57,11 +56,3 @@ class CdxjRecord:
 
     def __str__(self):
         return str(self.__dict__)
-
-
-def write_cdxj_index(output: str, inputs: List[str]) -> str:
-    """Generates a CDXJ index from a list of input WARC files and writes the index to an output file."""
-
-    wacz_indexer = CDXJIndexer(output=output, inputs=inputs)
-    wacz_indexer.process_all()
-    return output

@@ -10,11 +10,11 @@ from scrapy import __version__ as scrapy_version
 from typing_extensions import IO, TYPE_CHECKING, Any, Dict, List, Union
 
 from scrapy_webarchive import __version__ as scrapy_webarchive_version
-from scrapy_webarchive.cdxj import write_cdxj_index
+from scrapy_webarchive.cdxj.indexers import write_cdxj_index
 from scrapy_webarchive.constants import TIMESTAMP_DT_FORMAT, WARC_DT_FORMAT
 from scrapy_webarchive.utils import get_formatted_dt_string, hash_stream
 from scrapy_webarchive.wacz.constants import ARCHIVE_DIR, INDEXES_DIR, WACZ_VERSION
-from scrapy_webarchive.warc import WARCReader
+from scrapy_webarchive.warc.readers import WARCReader
 
 if TYPE_CHECKING:
     from scrapy_webarchive.extensions import FilesStoreProtocol

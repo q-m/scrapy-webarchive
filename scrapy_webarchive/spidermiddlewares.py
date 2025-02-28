@@ -17,7 +17,7 @@ from scrapy_webarchive.resolvers import create_resolver
 from scrapy_webarchive.strategies import FileLookupStrategy, StrategyRegistry
 from scrapy_webarchive.wacz.storages import ZipStorageHandlerFactory
 from scrapy_webarchive.wacz.wacz_file import MultiWaczFile, WaczFile
-from scrapy_webarchive.warc import record_transformer
+from scrapy_webarchive.warc.transformers import record_transformer
 
 
 class BaseWaczMiddleware:
