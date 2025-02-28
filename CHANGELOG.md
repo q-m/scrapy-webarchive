@@ -11,6 +11,7 @@
 - Introduced special meta key for WARC metadata during crawling/exporting ([#31](https://github.com/q-m/scrapy-webarchive/pull/31)) ([`f836f02`](https://github.com/q-m/scrapy-webarchive/commit/f836f02))
 - Added example spider for testing purposes
 - Document differences between URIs
+- Settings to run a spider against previously generated archives ([#32](https://github.com/q-m/scrapy-webarchive/pull/31)) ([`f28e966`](https://github.com/q-m/scrapy-webarchive/commit/f28e966))
 
 
 ## [0.3.0] - 2025-01-10
