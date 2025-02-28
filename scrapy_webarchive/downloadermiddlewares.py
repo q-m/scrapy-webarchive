@@ -9,7 +9,7 @@ from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.models import WarcMetadata
 from scrapy_webarchive.spidermiddlewares import BaseWaczMiddleware
-from scrapy_webarchive.warc import record_transformer
+from scrapy_webarchive.warc.transformers import record_transformer
 
 
 class WaczMiddleware(BaseWaczMiddleware):

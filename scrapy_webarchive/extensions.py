@@ -23,7 +23,7 @@ from scrapy_webarchive.utils import (
     is_uri_directory,
 )
 from scrapy_webarchive.wacz.creator import WaczFileCreator
-from scrapy_webarchive.warc import WarcFileWriter
+from scrapy_webarchive.warc.writers import WarcFileWriter
 
 
 class FilesStoreProtocol(Protocol):

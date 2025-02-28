@@ -1,6 +1,6 @@
 import pytest
 
-from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.cdxj.models import CdxjRecord
 
 
 def test_cdxj_record_valid():

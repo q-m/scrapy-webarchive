@@ -7,10 +7,10 @@ from io import BytesIO
 from typing_extensions import IO, Dict, Generator, List, Tuple, Union
 from warc.warc import WARCRecord
 
-from scrapy_webarchive.cdxj import CdxjRecord
+from scrapy_webarchive.cdxj.models import CdxjRecord
 from scrapy_webarchive.wacz.constants import ARCHIVE_DIR
 from scrapy_webarchive.wacz.storages import ZipStorageHandler
-from scrapy_webarchive.warc import WARCReader
+from scrapy_webarchive.warc.readers import WARCReader
 
 
 class WaczFile:
