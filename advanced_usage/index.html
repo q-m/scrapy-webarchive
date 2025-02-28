@@ -1,0 +1,828 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/q-m/scrapy-webarchive/advanced_usage/">
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+        <link rel="next" href="../settings/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+    
+    
+      
+        <title>Advanced Usage - scrapy-webarchive</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.66ac8b77.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#advanced-usage" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="scrapy-webarchive" class="md-header__button md-logo" aria-label="scrapy-webarchive" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            scrapy-webarchive
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Advanced Usage
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="scrapy-webarchive" class="md-nav__button md-logo" aria-label="scrapy-webarchive" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    scrapy-webarchive
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Usage
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Advanced Usage
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Usage
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#crawling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Crawling
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Crawling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skipping-specific-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Skipping specific requests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disallowing-archived-urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disallowing archived URLs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterating-a-wacz-archive-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      Iterating a WACZ archive index
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Iterating a WACZ archive index">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlling-the-crawl" class="md-nav__link">
+    <span class="md-ellipsis">
+      Controlling the crawl
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requests-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requests and Responses
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requests and Responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-keys-in-requestmeta" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Keys in Request.meta
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Special Keys in Request.meta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webarchive_warc" class="md-nav__link">
+    <span class="md-ellipsis">
+      webarchive_warc
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extending
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extending">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom strategies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Settings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#crawling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Crawling
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Crawling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skipping-specific-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Skipping specific requests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disallowing-archived-urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disallowing archived URLs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterating-a-wacz-archive-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      Iterating a WACZ archive index
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Iterating a WACZ archive index">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlling-the-crawl" class="md-nav__link">
+    <span class="md-ellipsis">
+      Controlling the crawl
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requests-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requests and Responses
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requests and Responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-keys-in-requestmeta" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Keys in Request.meta
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Special Keys in Request.meta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webarchive_warc" class="md-nav__link">
+    <span class="md-ellipsis">
+      webarchive_warc
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extending
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extending">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom strategies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="advanced-usage">Advanced usage</h1>
+<h2 id="crawling">Crawling</h2>
+<h3 id="skipping-specific-requests">Skipping specific requests</h3>
+<p>The <code>wacz_crawl_skip</code> flag is applied to requests that should be ignored by the crawler. When this flag is present, the middleware intercepts the request and prevents it from being processed further, skipping both download and parsing. This is useful in scenarios where the request should not be collected during a scraping session. Usage:</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">yield</span> <span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">cb_func</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wacz_crawl_skip&quot;</span><span class="p">])</span>
+</span></code></pre></div>
+<p>When this happens, the statistic <code>webarchive/crawl_skip</code> is increased.</p>
+<h3 id="disallowing-archived-urls">Disallowing archived URLs</h3>
+<p>If the spider has the attribute <code>archive_disallow_regexp</code>, all requests returned from the spider that match this regular expression, are ignored. For example, when a product page was returned in <code>start_requests</code>, but the product page disappeared and redirected to its category page, the category page can be disallowed, so as to avoid crawling the whole category, which would take much more time and could lead to unknown URLs (e.g. the spider's requested pagination size could be different from the website default).</p>
+<p>When this happens, the statistic <code>wacz/crawl_skip/disallowed</code> is increased.</p>
+<h3 id="iterating-a-wacz-archive-index">Iterating a WACZ archive index</h3>
+<p>When using a WACZ file that is not generated by your own spiders, it might be that the spider for crawling is not in place. In order to crawl this WACZ you need to tailor a spider to work with this specific WACZ file. This will require building the spider different to what it is supposed to look like with a live resource.</p>
+<p>Going around the default behaviour of the spider, the <code>WaczCrawlMiddleware</code> spider middleware will, when enabled, replace the crawl by an iteration through all the entries in the WACZ archive index.</p>
+<h4 id="configuration">Configuration</h4>
+<p>To use this strategy, enable both the spider- and the downloadermiddleware in the spider settings like so:</p>
+<div class="language-py highlight"><span class="filename">settings.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">DOWNLOADER_MIDDLEWARES</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">&quot;scrapy_webarchive.downloadermiddlewares.WaczMiddleware&quot;</span><span class="p">:</span> <span class="mi">543</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="p">}</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">SPIDER_MIDDLEWARES</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="s2">&quot;scrapy_webarchive.spidermiddlewares.WaczCrawlMiddleware&quot;</span><span class="p">:</span> <span class="mi">543</span><span class="p">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Then define the location of the WACZ archive with <code>SW_WACZ_SOURCE_URI</code> setting:</p>
+<div class="language-py highlight"><span class="filename">settings.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">SW_WACZ_SOURCE_URI</span> <span class="o">=</span> <span class="s2">&quot;s3://scrapy-webarchive/archive.wacz&quot;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">SW_WACZ_CRAWL</span> <span class="o">=</span> <span class="kc">True</span>
+</span></code></pre></div>
+<h4 id="controlling-the-crawl">Controlling the crawl</h4>
+<p>Not all URLs will be interesting for the crawl since your WACZ will most likely contain static files such as fonts, JavaScript (website and external), stylesheets, etc. In order to improve the performance of the spider by not reading all the irrelevant request/response entries, you can configure the following atrribute in your spider, <code>archive_regex</code>:</p>
+<div class="language-py highlight"><span class="filename">my_wacz_spider.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">scrapy.spiders</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spider</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyWaczSpider</span><span class="p">(</span><span class="n">Spider</span><span class="p">):</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;myspider&quot;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="hll">    <span class="n">archive_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^/tag/[\w-]+/$&quot;</span>
+</span></span></code></pre></div>
+<p>If the spider has an <code>archive_regexp</code> attribute, only response URLs matching this regexp are presented in <code>start_requests</code>. To visualise that, the spider above will only crawl the indented cdxj records below:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>com,toscrape,quotes)/favicon.ico 20241007081411465 {...}
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>com,gstatic,fonts)/s/raleway/v34/1ptug8zys_skggpnyc0it4ttdfa.woff2 {...}
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>com,googleapis,fonts)/css?family=raleway%3A400%2C700 20241007081525229 {...}
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>com,toscrape,quotes)/static/bootstrap.min.css 20241007081525202 {...}
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>com,toscrape,quotes)/static/main.css 20241007081525074 {...}
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>&gt; com,toscrape,quotes)/tag/books/ 20241007081513898 {...}
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>&gt; com,toscrape,quotes)/tag/friends/ 20241007081520928 {...}
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>&gt; com,toscrape,quotes)/tag/friendship/ 20241007081519648 {...}
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>&gt; com,toscrape,quotes)/tag/humor/ 20241007081512594 {...}
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>&gt; com,toscrape,quotes)/tag/inspirational/ 20241007081506990 {...}
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>&gt; com,toscrape,quotes)/tag/life/ 20241007081510349 {...}
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>&gt; com,toscrape,quotes)/tag/love/ 20241007081503814 {...}
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>&gt; com,toscrape,quotes)/tag/reading/ 20241007081516781 {...}
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>&gt; com,toscrape,quotes)/tag/simile/ 20241007081524944 {...}
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>&gt; com,toscrape,quotes)/tag/truth/ 20241007081523804 {...}
+</span></code></pre></div>
+<h2 id="requests-and-responses">Requests and Responses</h2>
+<h3 id="special-keys-in-requestmeta">Special Keys in Request.meta</h3>
+<p>The <code>Request.meta</code> attribute in Scrapy allows you to store arbitrary data for use during the crawling process. While you can store any custom data in this attribute, Scrapy and its built-in extensions recognize certain special keys. Additionally, the <code>scrapy-webarchive</code> extension introduces its own special key for managing metadata. Below is a description of the key used by <code>scrapy-webarchive</code>:</p>
+<ul>
+<li><code>webarchive_warc</code></li>
+</ul>
+<h4 id="webarchive_warc"><code>webarchive_warc</code></h4>
+<p>This key stores the result of a WACZ crawl or export. The data associated with this key is read-only and is not used to control Scrapy's behavior. The value of this key can be accessed using the constant <code>WEBARCHIVE_META_KEY</code>, but direct usage of this constant is discouraged. Instead, you should use the provided class method to instantiate a metadata object, as shown in the example below:</p>
+<div class="language-py highlight"><span class="filename">my_wacz_spider.py</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">scrapy.spiders</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spider</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">scrapy_webarchive.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">WarcMetadata</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyWaczSpider</span><span class="p">(</span><span class="n">Spider</span><span class="p">):</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;myspider&quot;</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">parse_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>        <span class="c1"># Instantiate a WarcMetadata object from the response</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="hll">        <span class="n">warc_meta</span> <span class="o">=</span> <span class="n">WarcMetadata</span><span class="o">.</span><span class="n">from_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+</span></span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>        <span class="c1"># Extract the attributes to attach while parsing a page/item</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>        <span class="k">if</span> <span class="n">warc_meta</span><span class="p">:</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>            <span class="k">yield</span> <span class="p">{</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>                <span class="s1">&#39;warc_record_id&#39;</span><span class="p">:</span> <span class="n">warc_meta</span><span class="o">.</span><span class="n">record_id</span><span class="p">,</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>                <span class="s1">&#39;wacz_uri&#39;</span><span class="p">:</span> <span class="n">warc_meta</span><span class="o">.</span><span class="n">wacz_uri</span><span class="p">,</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>            <span class="p">}</span>
+</span></code></pre></div>
+<h2 id="extending">Extending</h2>
+<h3 id="custom-strategies">Custom strategies</h3>
+<p>You can extend <code>scrapy-webarchive</code> by adding your own custom file lookup strategy. This allows you to define a custom way to select files based on available file information (URI and last modified timestamp).</p>
+<p>To create a new strategy, define a class that implements the <code>FileLookupStrategy</code> interface and register it with <code>StrategyRegistry</code>.</p>
+<div class="language-py highlight"><span class="filename">strategies.py</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">scrapy_webarchive.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileInfo</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">scrapy_webarchive.strategies</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrategyRegistry</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="nd">@StrategyRegistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;custom&quot;</span><span class="p">)</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">CustomStrategy</span><span class="p">:</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FileInfo</span><span class="p">],</span> <span class="n">target_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="c1"># Logic goes here, should return a single URI or None. </span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        <span class="c1"># For examples see scrapy_webarchive.strategies.</span>
+</span></code></pre></div>
+<p>Once registered, you can use your strategy by setting <code>SW_WACZ_LOOKUP_STRATEGY</code> in your Scrapy settings:</p>
+<div class="language-py highlight"><span class="filename">settings.py</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">SW_WACZ_LOOKUP_STRATEGY</span> <span class="o">=</span> <span class="s2">&quot;custom&quot;</span>
+</span></code></pre></div>
+<p>If you're defining it inside a <code>strategies.py</code> module within your Scrapy project, it will be automatically discovered. Alternatively, you can imported it somewhere in your project, such as in your <code>settings.py</code> or <code>middlewares.py</code>:</p>
+<div class="language-py highlight"><span class="filename">settings.py</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">my_project.custom_strategies</span>
+</span></code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.code.select", "content.code.annotate"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      
+    
+  </body>
+</html>
