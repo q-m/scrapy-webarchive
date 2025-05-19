@@ -24,7 +24,7 @@ class TestWaczCrawlMiddlewareWarc11:
     @contextmanager
     def _middleware(self, **new_settings):
         settings = self._get_settings(**new_settings)
-        mw = WaczCrawlMiddleware(settings, self.crawler.stats, self.spider.name)
+        mw = WaczCrawlMiddleware(settings, getattr(self.crawler, "stats"), self.spider.name)
         mw.spider_opened(self.spider)
         yield mw
 

@@ -39,7 +39,7 @@ class BaseWaczMiddleware:
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
         assert crawler.stats
-        spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else crawler.spider.name
+        spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else getattr(crawler.spider, "name")
         o = cls(crawler.settings, crawler.stats, spider_name)
         crawler.signals.connect(o.spider_opened, signals.spider_opened)
         return o
@@ -113,12 +113,14 @@ class BaseWaczMiddleware:
     def _is_off_site(self, url: str, spider: Spider) -> bool:
         """Check if the URL is off-site based on allowed domains."""
 
-        return hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains
+        allowed_domains = getattr(spider, "allowed_domains", None)
+        return allowed_domains is not None and urlparse(url).hostname not in allowed_domains
 
     def _is_disallowed_by_spider(self, url: str, spider: Spider) -> bool:
         """Check if the URL is disallowed by the spider's archive rules."""
 
-        return hasattr(spider, "archive_disallow_regexp") and not re.search(spider.archive_disallow_regexp, url)
+        archive_disallow_regexp = getattr(spider, "archive_disallow_regexp", None)
+        return archive_disallow_regexp is not None and not re.search(archive_disallow_regexp, url)
 
     @property
     def _uri_template(self) -> Optional[str]:
