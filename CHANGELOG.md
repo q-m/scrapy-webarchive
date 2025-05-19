@@ -2,6 +2,15 @@
 
 ## [next] - xxxx-xx-xx
 
+### Maintenance
+
+- Support for Python 3.12 and 3.13
+- Support for Scrapy 2.12 and 3.13
+- Bumped `cdxj-indexer` to 1.4.6 (to support Python 3.13)
+
+### Added
+- `py.typed` file
+
 
 ## [0.4.0] - 2025-02-28
 

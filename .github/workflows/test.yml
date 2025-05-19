@@ -37,25 +37,40 @@ jobs:
           - py312-scrapy210
           - py38-scrapy211
           - py312-scrapy211
-          - py312-scrapymaster
+          - py39-scrapy212
+          - py313-scrapy212
+          - py39-scrapy213
+          - py313-scrapy213
+          - py313-scrapymaster
         include:
+          # Scrapy 2.9
           - toxenv: py37-scrapy29
             python-version: 3.7
           - toxenv: py312-scrapy29
             python-version: '3.12'
-
+          # Scrapy 2.10
           - toxenv: py38-scrapy210
             python-version: 3.8 
           - toxenv: py312-scrapy210
             python-version: '3.12'
-
+          # Scrapy 2.11
           - toxenv: py38-scrapy211
             python-version: 3.8 
           - toxenv: py312-scrapy211
             python-version: '3.12'
-
-          - toxenv: py312-scrapymaster
-            python-version: '3.12'
+          # Scrapy 2.12
+          - toxenv: py39-scrapy212
+            python-version: 3.9
+          - toxenv: py313-scrapy212
+            python-version: '3.13'
+          # Scrapy 2.13
+          - toxenv: py39-scrapy213
+            python-version: 3.9
+          - toxenv: py313-scrapy213
+            python-version: '3.13'
+          # Scrapy master
+          - toxenv: py313-scrapymaster
+            python-version: '3.13'
 
     steps:
       - uses: actions/checkout@v2
