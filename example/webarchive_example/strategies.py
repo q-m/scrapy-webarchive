@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
+
 from scrapy_webarchive.models import FileInfo
 from scrapy_webarchive.strategies import StrategyRegistry
 

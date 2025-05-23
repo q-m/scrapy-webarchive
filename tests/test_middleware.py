@@ -8,11 +8,16 @@ from scrapy_webarchive.spidermiddlewares import WaczCrawlMiddleware
 
 from . import get_test_data_path
 
+request = Request("https://quotes.toscrape.com")
+
+async def start():
+    yield request
+
 
 class TestWaczCrawlMiddlewareWarc11:
     def setup_method(self):
         self.crawler = get_crawler()
-        self.spider = self.crawler._create_spider("quotes")
+        self.spider = self.crawler.spider = self.crawler._create_spider("quotes")
 
     def _get_settings(self, **new_settings):
         settings = {
@@ -25,6 +30,7 @@ class TestWaczCrawlMiddlewareWarc11:
     def _middleware(self, **new_settings):
         settings = self._get_settings(**new_settings)
         mw = WaczCrawlMiddleware(settings, getattr(self.crawler, "stats"), self.spider.name)
+        mw.crawler = self.crawler
         mw.spider_opened(self.spider)
         yield mw
 
@@ -52,4 +58,28 @@ class TestWaczCrawlMiddlewareWarc11:
 
         with self._middleware(SW_WACZ_CRAWL=True) as mw:
             out = list(mw.process_start_requests([], self.spider))
+            assert len([request for request in out if "wacz_crawl_skip" not in request.flags]) == 9
+
+    async def test_async_wacz_archive_iterates_all_records(self):
+        with self._middleware(SW_WACZ_CRAWL=True) as mw:
+            out = [request async for request in (mw.process_start(start()))]
+            assert len(out) == 101
+
+    async def test_async_wacz_archive_is_ignored_follow_original_behaviour(self):
+        with self._middleware(SW_WACZ_CRAWL=False) as mw:
+            out = [request async for request in mw.process_start(start())]
+            assert out == [request]
+
+    async def test_async_wacz_archive_filters_allowed_domains(self):
+        setattr(self.spider, "allowed_domains", "quotes.toscrape.com")
+
+        with self._middleware(SW_WACZ_CRAWL=True) as mw:
+            out = [request async for request in mw.process_start(start()) if "wacz_crawl_skip" not in request.flags]
+            assert len(out) == 61
+
+    async def test_async_wacz_archive_filters_archive_regex(self):
+        setattr(self.spider, "archive_disallow_regexp", r"https://quotes\.toscrape\.com/page/\d+/")
+
+        with self._middleware(SW_WACZ_CRAWL=True) as mw:
+            out = [request async for request in mw.process_start(start())]
             assert len([request for request in out if "wacz_crawl_skip" not in request.flags]) == 9
