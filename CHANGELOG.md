@@ -5,8 +5,10 @@
 ### Maintenance
 
 - Support for Python 3.12 and 3.13
-- Support for Scrapy 2.12 and 3.13
+- Support for Scrapy 2.12 and 2.13
 - Bumped `cdxj-indexer` to 1.4.6 (to support Python 3.13)
+- Added async `process_start` to spidermiddleware (to support Scrapy 2.13)
+    - Added additional async methods to support this (async iterator in WaczFile)
 
 ### Added
 - `py.typed` file

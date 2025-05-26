@@ -173,16 +173,17 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
         url = entry.data["url"]
         flags = []
 
-        if self.crawler.spider:
-            if self._is_off_site(url, self.crawler.spider):
-                self.stats.inc_value("webarchive/crawl_skip/off_site", spider=self.crawler.spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
-            elif self._is_disallowed_by_spider(url, self.crawler.spider):
-                self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=self.crawler.spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
-            else:
-                self.stats.inc_value("webarchive/start_request_count", spider=self.crawler.spider)
-                flags = ["wacz_start_request"]
+        assert self.crawler.spider
+
+        if self._is_off_site(url, self.crawler.spider):
+            self.stats.inc_value("webarchive/crawl_skip/off_site", spider=self.crawler.spider)
+            flags = ["wacz_start_request", "wacz_crawl_skip"]
+        elif self._is_disallowed_by_spider(url, self.crawler.spider):
+            self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=self.crawler.spider)
+            flags = ["wacz_start_request", "wacz_crawl_skip"]
+        else:
+            self.stats.inc_value("webarchive/start_request_count", spider=self.crawler.spider)
+            flags = ["wacz_start_request"]
 
         return record_transformer.request_for_record(
             entry,
@@ -199,8 +200,6 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
         Scrapy <2.13.
         """
 
-        assert self.crawler.spider
-
         if not self.crawl:
             yield from start
             return
@@ -213,8 +212,6 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
 
     async def process_start(self, start: AsyncIterator[Any]) -> AsyncIterator[Any]:
         """Processes start requests asynchronously."""
-
-        assert self.crawler.spider
 
         if not self.crawl:
             async for request in start:
