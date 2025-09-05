@@ -15,3 +15,8 @@ WARC-Target-URI: http://example.com/\r\n\
 Helloworld\
 \r\n\r\n\
 "
+
+
+def pytest_configure(config):
+    # install the reactor explicitly
+    from twisted.internet import reactor  # noqa: F401

@@ -1,5 +1,6 @@
 -e .
 pytest>=7.4,<8.4
+pytest-twisted==1.14.3
 freezegun==1.5.1
 mypy>=1.4,<1.12
 ruff==0.6.8

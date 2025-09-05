@@ -4,7 +4,7 @@ import gzip
 from collections import defaultdict
 from io import BytesIO
 
-from typing_extensions import IO, Dict, Generator, List, Tuple, Union
+from typing_extensions import IO, AsyncGenerator, Dict, Generator, List, Tuple, Union
 from warc.warc import WARCRecord
 
 from scrapy_webarchive.cdxj.models import CdxjRecord
@@ -64,6 +64,13 @@ class WaczFile:
 
     def iter_index(self) -> Generator[CdxjRecord, None, None]:
         """Iterates over all CDXJ records in the WACZ index."""
+
+        for cdxj_records in self.index.values():
+            for cdxj_record in cdxj_records:
+                yield cdxj_record
+
+    async def aiter_index(self) -> AsyncGenerator[CdxjRecord, None]:
+        """Asynchronously iterates over all CDXJ records in the WACZ index."""
 
         for cdxj_records in self.index.values():
             for cdxj_record in cdxj_records:
@@ -132,3 +139,10 @@ class MultiWaczFile:
         """
 
         yield from (cdxj_record for wacz in self.waczs for cdxj_record in wacz.iter_index())
+
+    async def aiter_index(self) -> AsyncGenerator[CdxjRecord, None]:
+        """Asynchronously iterates over the index entries in all WACZ files."""
+
+        for wacz in self.waczs:
+            async for cdxj_record in wacz.aiter_index():
+                yield cdxj_record

@@ -9,9 +9,10 @@ from scrapy.crawler import Crawler
 from scrapy.exceptions import NotConfigured
 from scrapy.settings import Settings
 from scrapy.statscollectors import StatsCollector
-from typing_extensions import Iterable, List, Optional, Self, Union
+from typing_extensions import Any, AsyncIterator, Iterable, List, Optional, Self, Union
 
 from scrapy_webarchive import utils
+from scrapy_webarchive.cdxj.models import CdxjRecord
 from scrapy_webarchive.exceptions import WaczMiddlewareException
 from scrapy_webarchive.resolvers import create_resolver
 from scrapy_webarchive.strategies import FileLookupStrategy, StrategyRegistry
@@ -23,6 +24,7 @@ from scrapy_webarchive.warc.transformers import record_transformer
 class BaseWaczMiddleware:
     """A base class for middlewares that require opening one or more WACZ files."""
 
+    crawler: Crawler
     wacz: Union[WaczFile, MultiWaczFile]
 
     def __init__(self, settings: Settings, stats: StatsCollector, spider_name) -> None:
@@ -39,8 +41,9 @@ class BaseWaczMiddleware:
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> Self:
         assert crawler.stats
-        spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else crawler.spider.name
+        spider_name = crawler.spidercls.name if hasattr(crawler.spidercls, "name") else getattr(crawler.spider, "name")
         o = cls(crawler.settings, crawler.stats, spider_name)
+        o.crawler = crawler
         crawler.signals.connect(o.spider_opened, signals.spider_opened)
         return o
 
@@ -113,12 +116,14 @@ class BaseWaczMiddleware:
     def _is_off_site(self, url: str, spider: Spider) -> bool:
         """Check if the URL is off-site based on allowed domains."""
 
-        return hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains
+        allowed_domains = getattr(spider, "allowed_domains", None)
+        return allowed_domains is not None and urlparse(url).hostname not in allowed_domains
 
     def _is_disallowed_by_spider(self, url: str, spider: Spider) -> bool:
         """Check if the URL is disallowed by the spider's archive rules."""
 
-        return hasattr(spider, "archive_disallow_regexp") and not re.search(spider.archive_disallow_regexp, url)
+        archive_disallow_regexp = getattr(spider, "archive_disallow_regexp", None)
+        return archive_disallow_regexp is not None and not re.search(archive_disallow_regexp, url)
 
     @property
     def _uri_template(self) -> Optional[str]:
@@ -162,36 +167,59 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
 
         super().spider_opened(spider)
 
-    def process_start_requests(self, start_requests: Iterable[Request], spider: Spider) -> Iterable[Request]:
-        """Processes start requests and yields WACZ index entries or original requests based on the crawl setting."""
+    def _process(self, entry: CdxjRecord) -> Request:
+        """Helper function to process requests for both sync and async methods."""
+
+        url = entry.data["url"]
+        flags = []
+
+        assert self.crawler.spider
+
+        if self._is_off_site(url, self.crawler.spider):
+            self.stats.inc_value("webarchive/crawl_skip/off_site", spider=self.crawler.spider)
+            flags = ["wacz_start_request", "wacz_crawl_skip"]
+        elif self._is_disallowed_by_spider(url, self.crawler.spider):
+            self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=self.crawler.spider)
+            flags = ["wacz_start_request", "wacz_crawl_skip"]
+        else:
+            self.stats.inc_value("webarchive/start_request_count", spider=self.crawler.spider)
+            flags = ["wacz_start_request"]
+
+        return record_transformer.request_for_record(
+            entry,
+            flags=flags,
+            meta={"cdxj_record": entry},
+            dont_filter=True,
+        )
+
+    def process_start_requests(self, start: Iterable[Any], spider: Spider) -> Iterable[Any]:
+        """Processes start requests synchronously.
         
-        # If crawl is disabled, yield the original start requests.
+        `process_start_requests` has been deprecated in favor of `process_start` from Scrapy 2.13 onwards.  
+        To support multiple version we need both implementations. Drop `process_start_requests` when we drop support for
+        Scrapy <2.13.
+        """
+
         if not self.crawl:
-            yield from start_requests
+            yield from start
             return
-        # If the attribute has not been set, none of the WACZ could be opened.
-        elif not hasattr(self, "wacz"):
+
+        if not hasattr(self, "wacz"):
             raise WaczMiddlewareException("Could not open any WACZ files, check your WACZ URIs and authentication.")
 
-        # Iterate over entries in the WACZ index.
         for entry in self.wacz.iter_index():
-            url = entry.data["url"]
+            yield self._process(entry)
 
-            # Filter out off-site requests
-            if self._is_off_site(url, spider):
-                self.stats.inc_value("webarchive/crawl_skip/off_site", spider=spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
-            # Ignore disallowed pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
-            elif self._is_disallowed_by_spider(url, spider):
-                self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
-            else:
-                self.stats.inc_value("webarchive/start_request_count", spider=spider)
-                flags = ["wacz_start_request"]
+    async def process_start(self, start: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        """Processes start requests asynchronously."""
 
-            yield record_transformer.request_for_record(
-                entry,
-                flags=flags,
-                meta={"cdxj_record": entry},
-                dont_filter=True,
-            )
+        if not self.crawl:
+            async for request in start:
+                yield request
+            return
+
+        if not hasattr(self, "wacz"):
+            raise WaczMiddlewareException("Could not open any WACZ files, check your WACZ URIs and authentication.")
+
+        async for entry in self.wacz.aiter_index():
+            yield self._process(entry)

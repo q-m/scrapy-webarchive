@@ -71,11 +71,14 @@ class WaczExporter:
         # Initialize store, writer and creator
         self.store: FilesStoreProtocol = self._get_store(self.store_uri)
         self.writer = WarcFileWriter(collection_name=self.spider_name)
+        collection_name = (
+            crawler.spidercls.name if hasattr(crawler.spidercls, "name") else getattr(crawler.spider, "name")
+        )
         self.wacz_creator = WaczFileCreator(
             store=self.store,
             warc_fname=self.writer.warc_fname,
             wacz_fname=self.wacz_fname,
-            collection_name=crawler.spider.name,
+            collection_name=collection_name,
             title=self.settings["SW_WACZ_TITLE"],
             description=self.settings["SW_WACZ_DESCRIPTION"],
         )
@@ -182,6 +185,7 @@ class WaczExporter:
 
     def spider_closed(self, spider: Spider) -> None:
         self.wacz_creator.create()
+        spider.logger.info(f"WACZ file created: {self.export_uri}")
 
     @property
     def export_uri(self) -> str:

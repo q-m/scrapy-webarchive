@@ -2,6 +2,7 @@ from dataclasses import asdict
 
 import pytest
 from scrapy.http import Request, Response
+from typing_extensions import Optional
 
 from scrapy_webarchive.constants import WEBARCHIVE_META_KEY
 from scrapy_webarchive.models import FileInfo, WarcMetadata
@@ -41,7 +42,7 @@ class TestWarcMetadata:
         with pytest.raises(TypeError):
             WarcMetadata.from_response(response)
     
-    def _get_response(self, meta: dict = None, url: str = "https://example.com"):
+    def _get_response(self, meta: Optional[dict] = None, url: str = "https://example.com"):
         if meta is None:
             meta = {WEBARCHIVE_META_KEY: self.meta}
 
