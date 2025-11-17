@@ -75,7 +75,7 @@ class WaczExporter:
             store=self.store,
             warc_fname=self.writer.warc_fname,
             wacz_fname=self.wacz_fname,
-            collection_name=crawler.spider.name,
+            collection_name=self.spider_name,
             title=self.settings["SW_WACZ_TITLE"],
             description=self.settings["SW_WACZ_DESCRIPTION"],
         )
