@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scrapy-webarchive"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
     "Scrapy>=2.9,<2.12",
     "warcio==1.7.4",

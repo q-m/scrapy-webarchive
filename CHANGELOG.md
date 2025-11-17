@@ -2,6 +2,9 @@
 
 ## [next] - xxxx-xx-xx
 
+## [0.4.1] - 2025-11-17
+
+- Fix for getting spider name in different scrapy versions
 
 ## [0.4.0] - 2025-02-28
 
