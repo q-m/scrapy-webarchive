@@ -99,7 +99,8 @@ class WaczFile:
 
         for line in index_file:
             cdxj_record = CdxjRecord.from_cdxline(line.decode(), wacz_file=self)
-            cdxj_records[cdxj_record.data["url"]].append(cdxj_record)
+            if cdxj_record:
+                cdxj_records[cdxj_record.data["url"]].append(cdxj_record)
 
         return cdxj_records
 
@@ -131,4 +132,4 @@ class MultiWaczFile:
         record has its `wacz_file` attribute set to the corresponding WACZ file.
         """
 
-        yield from (cdxj_record for wacz in self.waczs for cdxj_record in wacz.iter_index())
+        yield from (cdxj_record for wacz in self.waczs for cdxj_record in wacz.iter_index() if cdxj_record)
