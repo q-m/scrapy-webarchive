@@ -33,9 +33,9 @@ class WaczMiddleware(BaseWaczMiddleware):
             self.stats.inc_value("webarchive/crawl_skip/off_site", spider=spider)
             raise IgnoreRequest()
 
-        # Ignore disallowed pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones).
-        if self._is_disallowed_by_spider(request.url, spider):
-            self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=spider)
+        # Ignore blacklisted pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones).
+        if self._is_blacklisted_by_spider(request.url, spider):
+            self.stats.inc_value("webarchive/crawl_skip/blacklisted", spider=spider)
             raise IgnoreRequest()
 
     def process_request(self, request: Request, spider: Spider):

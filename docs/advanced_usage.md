@@ -12,11 +12,11 @@ yield Request(url, callback=cb_func, flags=["wacz_crawl_skip"])
 
 When this happens, the statistic `webarchive/crawl_skip` is increased.
 
-### Disallowing archived URLs
+### Filtering URLs
 
-If the spider has the attribute `archive_disallow_regexp`, all requests returned from the spider that match this regular expression, are ignored. For example, when a product page was returned in `start_requests`, but the product page disappeared and redirected to its category page, the category page can be disallowed, so as to avoid crawling the whole category, which would take much more time and could lead to unknown URLs (e.g. the spider's requested pagination size could be different from the website default).
+If the spider has the attribute `archive_blacklist_regexp`, all requests returned from the spider that match this regular expression, are ignored. For example, when a product page was returned in `start_requests`, but the product page disappeared and redirected to its category page, the category page can be disallowed, so as to avoid crawling the whole category, which would take much more time and could lead to unknown URLs (e.g. the spider's requested pagination size could be different from the website default).
 
-When this happens, the statistic `wacz/crawl_skip/disallowed` is increased.
+When this happens, the statistic `wacz/crawl_skip/blacklisted` is increased.
 
 ### Iterating a WACZ archive index
 
@@ -47,7 +47,7 @@ SW_WACZ_CRAWL = True
 
 #### Controlling the crawl
 
-Not all URLs will be interesting for the crawl since your WACZ will most likely contain static files such as fonts, JavaScript (website and external), stylesheets, etc. In order to improve the performance of the spider by not reading all the irrelevant request/response entries, you can configure the following atrribute in your spider, `archive_regex`:
+Not all URLs will be interesting for the crawl since your WACZ will most likely contain static files such as fonts, JavaScript (website and external), stylesheets, etc. In order to improve the performance of the spider by not reading all the irrelevant request/response entries, you can configure the following atrribute in your spider, `archive_regexp`:
 
 ``` py title="my_wacz_spider.py" hl_lines="6"
 from scrapy.spiders import Spider
@@ -55,10 +55,10 @@ from scrapy.spiders import Spider
 
 class MyWaczSpider(Spider):
     name = "myspider"
-    archive_regex = r"^/tag/[\w-]+/$"
+    archive_regexp = r"^/tag/[\w-]+/$"
 ```
 
-If the spider has an `archive_regexp` attribute, only response URLs matching this regexp are presented in `start_requests`. To visualise that, the spider above will only crawl the indented cdxj records below:
+If the spider has an `archive_regexp` attribute, only response URLs matching this regexp are presented in `start_requests`. To visualise that, the spider above will only crawl the 10 indented cdxj records below:
 
 ```
 com,toscrape,quotes)/favicon.ico 20241007081411465 {...}
@@ -77,6 +77,9 @@ com,toscrape,quotes)/static/main.css 20241007081525074 {...}
 > com,toscrape,quotes)/tag/simile/ 20241007081524944 {...}
 > com,toscrape,quotes)/tag/truth/ 20241007081523804 {...}
 ```
+
+For each index entry that is skipped in this way, the statistic `wacz/crawl_skip/filtered` is increased.
+Note that for consistency, URLs matching `archive_blacklist_regexp` are also excluded when crawling from the index.
 
 ## Requests and Responses
 
