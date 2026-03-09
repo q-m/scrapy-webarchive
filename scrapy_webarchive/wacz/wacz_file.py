@@ -82,13 +82,7 @@ class WaczFile:
         # Try opening each possible index file until we've found the index.
         for index_path in index_paths:
             try:
-                fetched = self.storage_handler.fetch_file(index_path)
-
-                if index_path.endswith(".gz"):
-                    return gzip.open(BytesIO(fetched))
-                else:
-                    return BytesIO(fetched)
-
+                return BytesIO(self.storage_handler.fetch_file(index_path))
             except FileNotFoundError:
                 continue
 
