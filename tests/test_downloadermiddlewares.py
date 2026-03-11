@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+import pytest
+from scrapy.exceptions import IgnoreRequest
 from scrapy.http.request import Request
 from scrapy.settings import Settings
 from scrapy.spiders import Spider
@@ -47,13 +49,19 @@ class TestWaczMiddleware(BaseTestWaczMiddleware):
             assert response
             assert response.status == 404
 
+    def test_retrieve_from_wacz_blacklisted(self):
+        setattr(self.spider, "archive_blacklist_regexp", r"/tag/love/")
+        request = Request("https://quotes.toscrape.com/tag/love/")
+        with self._middleware() as mw:
+            with pytest.raises(IgnoreRequest):
+                mw.process_request(request, self.spider)
+
     def test_retrieve_from_wacz(self):
         request = Request("https://quotes.toscrape.com/tag/love/")
         with self._middleware() as mw:
             response = mw.process_request(request, self.spider)
             assert response
             assert response.status == 200
-
 
 class TestWaczMiddlewareMultiWacz(BaseTestWaczMiddleware):
     def _get_wacz_source_url(self):

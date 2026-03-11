@@ -115,10 +115,17 @@ class BaseWaczMiddleware:
 
         return hasattr(spider, "allowed_domains") and urlparse(url).hostname not in spider.allowed_domains
 
-    def _is_disallowed_by_spider(self, url: str, spider: Spider) -> bool:
-        """Check if the URL is disallowed by the spider's archive rules."""
+    def _is_filtered_by_spider(self, url: str, spider: Spider) -> bool:
+        """Check if the URL is filtered out by the spider's archive rules."""
 
-        return hasattr(spider, "archive_disallow_regexp") and not re.search(spider.archive_disallow_regexp, url)
+        return hasattr(spider, "archive_regexp") and \
+               re.search(spider.archive_regexp, url) is None
+
+    def _is_blacklisted_by_spider(self, url: str, spider: Spider) -> bool:
+        """Check if the URL is blacklisted out by the spider's archive blacklist rules."""
+
+        return hasattr(spider, "archive_blacklist_regexp") and \
+               re.search(spider.archive_blacklist_regexp, url) is not None
 
     @property
     def _uri_template(self) -> Optional[str]:
@@ -180,18 +187,19 @@ class WaczCrawlMiddleware(BaseWaczMiddleware):
             # Filter out off-site requests
             if self._is_off_site(url, spider):
                 self.stats.inc_value("webarchive/crawl_skip/off_site", spider=spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
-            # Ignore disallowed pages (to avoid crawling e.g. redirects from whitelisted pages to unwanted ones)
-            elif self._is_disallowed_by_spider(url, spider):
-                self.stats.inc_value("webarchive/crawl_skip/disallowed", spider=spider)
-                flags = ["wacz_start_request", "wacz_crawl_skip"]
+            # Ignore filtered pages (to avoid crawling all files in the WACZ)
+            elif self._is_filtered_by_spider(url, spider):
+                self.stats.inc_value("webarchive/crawl_skip/filtered", spider=spider)
+            # Also ignore blacklisted pages (as it would be illogical to return them here, though use-case is different)
+            elif self._is_blacklisted_by_spider(url, spider):
+                self.stats.inc_value("webarchive/crawl_skip/blacklisted", spider=spider)
             else:
                 self.stats.inc_value("webarchive/start_request_count", spider=spider)
                 flags = ["wacz_start_request"]
 
-            yield record_transformer.request_for_record(
-                entry,
-                flags=flags,
-                meta={"cdxj_record": entry},
-                dont_filter=True,
-            )
+                yield record_transformer.request_for_record(
+                    entry,
+                    flags=flags,
+                    meta={"cdxj_record": entry},
+                    dont_filter=True,
+                )
