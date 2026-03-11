@@ -4,7 +4,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from typing_extensions import TYPE_CHECKING
+from typing_extensions import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from scrapy_webarchive.wacz.wacz_file import WaczFile
@@ -41,13 +41,13 @@ class CdxjRecord:
         return CDXREC.match(line)
 
     @classmethod
-    def from_cdxline(cls, cdxline: str, wacz_file: "WaczFile"):
+    def from_cdxline(cls, cdxline: str, wacz_file: "WaczFile") -> Union[CdxjRecord, None]:
         """Creates a CdxjRecord instance from a CDX(J) line."""
 
         m = cls._parse(cdxline.strip())
 
         if not m:
-            raise ValueError(f"Invalid CDXJ line: '{cdxline.strip()}'")
+            return None
 
         parsed_data = m.groupdict(default="")
         parsed_data['data'] = json.loads(parsed_data['data'])
