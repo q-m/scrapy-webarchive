@@ -2,6 +2,12 @@
 
 ## [next] - xxxx-xx-xx
 
+## [0.5.0] - 2026-03-11
+
+- Add `archive_regexp`, `archive_blacklist_regexp`; remove `archive_disallow_regexp` ([#39](https://github.com/q-m/scrapy-webarchive/issues/39)) - _possibly breaking change_
+- Ignore unrecognized index entries ([#38](https://github.com/q-m/scrapy-webarchive/issues/38))
+- Fix reading compressed index files ([#42](https://github.com/q-m/scrapy-webarchive/issues/42))
+
 ## [0.4.1] - 2025-11-17
 
 - Fix for getting spider name in different scrapy versions
