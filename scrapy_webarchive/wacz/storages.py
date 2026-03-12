@@ -181,16 +181,22 @@ class S3ZipStorageHandler(RemoteZipStorageHandler):
         return self.s3_client.head_object(Bucket=self.bucket, Key=self.path)
 
     def fetch_file_part(self, file_name: str, offset: int, size: int) -> bytes:
-        metadata = self.zip_metadata[file_name]
+        metadata = self.zip_metadata.get(file_name)
+        if not metadata:
+            raise FileNotFoundError(f"File {file_name} not found in ZIP archive")
         range_bytes = self._calculate_range(metadata, offset, size)
         data = self.get_object(range_bytes)
 
         return gzip.open(BytesIO(data)).read() if file_name.endswith(".gz") else data
 
     def fetch_file(self, file_name: str) -> bytes:
-        metadata = self.zip_metadata[file_name]
+        metadata = self.zip_metadata.get(file_name)
+        if not metadata:
+            raise FileNotFoundError(f"File {file_name} not found in ZIP archive")
         range_bytes = self._calculate_range(metadata, 0, metadata["compressed_size"])
-        return self.get_object(range_bytes)
+        data = self.get_object(range_bytes)
+
+        return gzip.open(BytesIO(data)).read() if file_name.endswith(".gz") else data
 
     def _calculate_range(self, metadata: dict, offset: int, size: int) -> str:
         start = metadata["header_offset"] + metadata["file_header_length"] + offset
