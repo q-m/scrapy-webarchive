@@ -2,6 +2,10 @@
 
 ## [next] - xxxx-xx-xx
 
+## [0.5.1] - 2026-03-12
+
+- Fix mismatch between crawling from local storage vs. S3
+
 ## [0.5.0] - 2026-03-11
 
 - Add `archive_regexp`, `archive_blacklist_regexp`; remove `archive_disallow_regexp` ([#39](https://github.com/q-m/scrapy-webarchive/issues/39)) - _possibly breaking change_
