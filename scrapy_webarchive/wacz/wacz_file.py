@@ -27,6 +27,8 @@ class WaczFile:
         """Looks for the most relevant CDXJ record for a given URL in the index."""
 
         records = self.index.get(url, [])
+        # filter out revisits, as they contain no actual content (and may be the last)
+        records = [r for r in records if r.data.get("mime") != "warc/revisit"]
 
         # If multiple entries are present, the last one is most likely to be relevant
         return records[-1] if records else None
@@ -67,7 +69,9 @@ class WaczFile:
 
         for cdxj_records in self.index.values():
             for cdxj_record in cdxj_records:
-                yield cdxj_record
+                # revisits are not interesting for spiders parsing responses
+                if cdxj_record.data.get("mime") != "warc/revisit":
+                    yield cdxj_record
 
     def _get_index(self) -> Union[gzip.GzipFile, IO]:
         """Opens the index file from the WACZ archive, checking for .cdxj, .cdxj.gz, .cdx. and .cdx.gz"""

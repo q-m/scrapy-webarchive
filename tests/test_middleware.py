@@ -38,14 +38,14 @@ class TestWaczCrawlMiddlewareWarc11:
     def test_wacz_archive_iterates_all_records(self):
         with self._middleware(SW_WACZ_CRAWL=True) as mw:
             out = list(mw.process_start_requests([], self.spider))
-            assert len(out) == 101
+            assert len(out) == 25
 
     def test_wacz_archive_filters_allowed_domains(self):
         setattr(self.spider, "allowed_domains", "quotes.toscrape.com")
 
         with self._middleware(SW_WACZ_CRAWL=True) as mw:
             out = list(mw.process_start_requests([], self.spider))
-            assert len(out) == 61
+            assert len(out) == 23
 
     def test_wacz_archive_filters_archive_regexp(self):
         setattr(self.spider, "archive_regexp", r"https://quotes\.toscrape\.com/page/\d+/")
