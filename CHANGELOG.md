@@ -2,6 +2,10 @@
 
 ## [next] - xxxx-xx-xx
 
+## [0.5.2] - 2026-03-13
+
+- Filter out revisits
+
 ## [0.5.1] - 2026-03-12
 
 - Fix mismatch between crawling from local storage vs. S3
