@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
+import scrapy.http
 from typing_extensions import IO, Dict, Optional, Tuple
 
 from scrapy_webarchive.constants import BUFF_SIZE
@@ -20,7 +21,7 @@ def get_formatted_dt_string(format: str) -> str:
 
 def header_lines_to_dict(lines):
     # TODO: Only supports each header appearing once, not multiple occurences.
-    headers = {}
+    headers = scrapy.http.Headers()
     for line in lines:
         k, v = line.split(b":", 1)
         v = v.lstrip()

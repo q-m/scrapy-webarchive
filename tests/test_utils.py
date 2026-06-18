@@ -8,6 +8,20 @@ from scrapy_webarchive import utils
 from scrapy_webarchive.constants import BUFF_SIZE
 
 
+def test_header_lines_to_dict_same_case():
+    data = [b"Content-Type: text/html; encoding=utf-8"]
+    result = utils.header_lines_to_dict(data)
+
+    assert result == {b"Content-Type": [b"text/html; encoding=utf-8"]}
+
+
+def test_header_lines_to_dict_case_difference():
+    data = [b"content-type: text/html; encoding=utf-8"]
+    result = utils.header_lines_to_dict(data)
+
+    assert result == {b"Content-Type": [b"text/html; encoding=utf-8"]}
+
+
 def test_hash_stream_with_empty_stream():
     data = b""
     stream = io.BytesIO(data)
