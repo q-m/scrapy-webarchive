@@ -2,6 +2,10 @@
 
 ## [next] - xxxx-xx-xx
 
+## [0.5.3] - 2026-06-18
+
+- Make headers case-insensitive ([#45](https://github.com/q-m/scrapy-webarchive/issues/45))
+
 ## [0.5.2] - 2026-03-13
 
 - Filter out revisits
